@@ -1,0 +1,32 @@
+{
+  "name": "tunisia-circular-backend",
+  "version": "2.0.0",
+  "description": "Tunisia Circular — marketplace API (sellers, buyers, collection points) with real-time notifications",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "migrate": "node migrations/runMigrations.js",
+    "seed": "node seeds/seed.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "pg": "^8.11.3",
+    "socket.io": "^4.8.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.1"
+  }
+}
