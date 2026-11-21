@@ -18,16 +18,19 @@ export async function sellerOverview(userId, from, to) {
            COUNT(*) FILTER (WHERE status = 'pending') AS responses_pending
          FROM request_responses WHERE responder_id = $1 AND ${PERIOD('created_at')}`, p),
     one(`SELECT COUNT(*) AS purchases_total,
-           COUNT(*) FILTER (WHERE status = 'received') AS purchases_received,
-           COALESCE(SUM(quantity_kg) FILTER (WHERE status = 'received'), 0) AS sold_kg,
-           COALESCE(SUM(total_amount) FILTER (WHERE status = 'received'), 0) AS revenue
-         FROM purchases WHERE seller_id = $1 AND ${PERIOD('created_at')}`, p),
+           COUNT(*) FILTER (WHERE pu.status = 'received') AS purchases_received,
+           COALESCE(SUM(pu.quantity_kg) FILTER (WHERE pu.status = 'received'), 0) AS sold_kg,
+           COALESCE(SUM(pu.total_amount) FILTER (WHERE pu.status = 'received'), 0) AS revenue,
+           COALESCE(SUM(pu.quantity_kg * COALESCE(c.co2_factor_kg, 0)) FILTER (WHERE pu.status = 'received'), 0) AS co2_avoided_kg
+         FROM purchases pu LEFT JOIN categories c ON c.id = pu.category_id
+         WHERE pu.seller_id = $1 AND ${PERIOD('pu.created_at')}`, p),
     one(`SELECT COUNT(*) FILTER (WHERE is_active AND NOW() BETWEEN starts_at AND ends_at) AS active,
            COUNT(*) AS total FROM discounts WHERE seller_id = $1`, [userId]),
     many(`SELECT id, title, views_count, quantity_available, unit FROM products
           WHERE seller_id = $1 ORDER BY views_count DESC LIMIT 5`, [userId]),
     many(`SELECT c.id AS category_id, c.name AS category_name, COUNT(pu.id) AS purchases,
-            COALESCE(SUM(pu.quantity_kg), 0) AS sold_kg, COALESCE(SUM(pu.total_amount), 0) AS revenue
+            COALESCE(SUM(pu.quantity_kg), 0) AS sold_kg, COALESCE(SUM(pu.total_amount), 0) AS revenue,
+            COALESCE(SUM(pu.quantity_kg * COALESCE(c.co2_factor_kg, 0)), 0) AS co2_avoided_kg
           FROM purchases pu LEFT JOIN categories c ON c.id = pu.category_id
           WHERE pu.seller_id = $1 AND pu.status = 'received' AND ${PERIOD('pu.created_at')}
           GROUP BY c.id, c.name ORDER BY revenue DESC`, p),
@@ -86,14 +89,18 @@ export async function buyerOverview(userId, from, to) {
 export async function timeline(user, months) {
   const series = {
     seller: `SELECT date_trunc('month', pu.created_at) AS m, COUNT(*) AS count,
-               SUM(pu.quantity_kg) AS quantity_kg, SUM(pu.total_amount) AS amount
-             FROM purchases pu WHERE pu.seller_id = $1 AND pu.status = 'received' GROUP BY 1`,
+               SUM(pu.quantity_kg) AS quantity_kg, SUM(pu.total_amount) AS amount,
+               SUM(pu.quantity_kg * COALESCE(c.co2_factor_kg, 0)) AS co2_kg
+             FROM purchases pu LEFT JOIN categories c ON c.id = pu.category_id
+             WHERE pu.seller_id = $1 AND pu.status = 'received' GROUP BY 1`,
     collector: `SELECT date_trunc('month', pu.created_at) AS m, COUNT(*) AS count,
-               SUM(pu.quantity_kg) AS quantity_kg, SUM(pu.total_amount) AS amount
+               SUM(pu.quantity_kg) AS quantity_kg, SUM(pu.total_amount) AS amount,
+               SUM(pu.quantity_kg * COALESCE(c.co2_factor_kg, 0)) AS co2_kg
              FROM purchases pu JOIN collection_points cp ON cp.id = pu.collection_point_id
+             LEFT JOIN categories c ON c.id = pu.category_id
              WHERE cp.manager_id = $1 AND pu.status = 'received' GROUP BY 1`,
     buyer: `SELECT date_trunc('month', r.created_at) AS m, COUNT(*) AS count,
-              SUM(r.quantity) FILTER (WHERE r.unit = 'kg') AS quantity_kg, 0 AS amount
+              SUM(r.quantity) FILTER (WHERE r.unit = 'kg') AS quantity_kg, 0 AS amount, 0 AS co2_kg
             FROM buy_requests r WHERE r.buyer_id = $1 GROUP BY 1`,
   }[user.role];
   if (!series) return [];
@@ -103,7 +110,8 @@ export async function timeline(user, months) {
                              date_trunc('month', NOW()), INTERVAL '1 month') AS m
     ), data AS (${series})
     SELECT to_char(months.m, 'YYYY-MM') AS month, COALESCE(data.count, 0) AS count,
-      COALESCE(data.quantity_kg, 0) AS quantity_kg, COALESCE(data.amount, 0) AS amount
+      COALESCE(data.quantity_kg, 0) AS quantity_kg, COALESCE(data.amount, 0) AS amount,
+      COALESCE(data.co2_kg, 0) AS co2_kg
     FROM months LEFT JOIN data ON data.m = months.m
     ORDER BY months.m
   `, [user.id, months]);

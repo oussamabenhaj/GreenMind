@@ -40,6 +40,7 @@ export function ReportsView() {
   const label = (ym) => dayjs(`${ym}-01`).format(months > 12 ? 'MMM YY' : 'MMM');
   const revenue = (timeline ?? []).map((tt) => ({ label: label(tt.month), value: tt.amount }));
   const volume = (timeline ?? []).map((tt) => ({ label: label(tt.month), value: tt.quantity_kg }));
+  const co2 = (timeline ?? []).map((tt) => ({ label: label(tt.month), value: tt.co2_kg }));
   const maxCat = Math.max(1, ...(o?.sales_by_category ?? []).map((c) => c.revenue));
 
   return (
@@ -69,6 +70,7 @@ export function ReportsView() {
           [t('Revenus'), fMoney(o?.sales.revenue), 'solar:wallet-money-bold-duotone', 'primary'],
           [t('Quantité vendue'), `${fNum(o?.sales.sold_kg)} kg`, 'solar:box-bold-duotone', 'secondary'],
           [t('Ventes réceptionnées'), `${o?.sales.purchases_received ?? 0} / ${o?.sales.purchases_total ?? 0}`, 'solar:delivery-bold-duotone', 'info'],
+          [t('CO₂ évité'), `${fNum(o?.sales.co2_avoided_kg)} ${t('kg CO₂e')}`, 'solar:leaf-bold-duotone', 'success'],
         ].map(([title, value, icon, color], i) => (
           <Grid key={title} size={{ xs: 12, sm: 6, lg: 3 }}>
             <KpiCard title={title} value={value} icon={icon} color={color} loading={loading} delay={i * 0.05} />
@@ -93,6 +95,18 @@ export function ReportsView() {
         </Grid>
 
         <Grid size={{ xs: 12 }}>
+          <Card>
+            <CardHeader
+              title={t('CO₂ évité (kg)')}
+              subheader={t('Émissions évitées par les matières vendues, non enfouies ni brûlées.')}
+            />
+            <Box sx={{ p: 3 }}>
+              <EcoChart series={co2} color="success" format={fNum} />
+            </Box>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
           <Card sx={{ height: 1 }}>
             <CardHeader title={t('Ventes par catégorie')} />
             <Stack spacing={2.5} sx={{ p: 3 }}>
@@ -106,7 +120,7 @@ export function ReportsView() {
                   <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.75 }}>
                     <Typography variant="subtitle2">{c.category_name ?? t('Non classé')}</Typography>
                     <Typography variant="body2">
-                      {fMoney(c.revenue)} · {fNum(c.sold_kg)} {t('kg')}
+                      {fMoney(c.revenue)} · {fNum(c.sold_kg)} {t('kg')} · {fNum(c.co2_avoided_kg)} {t('kg CO₂e')}
                     </Typography>
                   </Stack>
                   <LinearProgress variant="determinate" value={(c.revenue / maxCat) * 100} sx={{ height: 8, borderRadius: 4 }} />
