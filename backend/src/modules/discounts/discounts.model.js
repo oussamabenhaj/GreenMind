@@ -7,7 +7,7 @@ const SELECT = `
          WHEN NOW() < d.starts_at THEN 'upcoming'
          WHEN NOW() > d.ends_at THEN 'expired'
          ELSE 'active' END AS state,
-    json_build_object('id', p.id, 'title', p.title, 'unit', p.unit, 'images', p.images,
+    json_build_object('id', p.id, 'title', p.title, 'i18n', p.i18n, 'unit', p.unit, 'images', p.images,
       'price_per_unit', p.price_per_unit, 'category_id', p.category_id, 'gouvernorat', p.gouvernorat) AS product,
     CASE WHEN p.price_per_unit IS NULL THEN NULL
          ELSE ROUND(p.price_per_unit * (1 - d.percentage / 100), 3) END AS discounted_price_per_unit,

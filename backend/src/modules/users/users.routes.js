@@ -30,9 +30,11 @@ const updateMeBody = z.object({
   lat: lat.nullable().optional(),
   lng: lng.nullable().optional(),
   category_ids: intArray.optional(),
+  preferred_lang: z.enum(['fr', 'ar']).optional(), // interface language, restored at sign-in
 }).strict().refine((d) => (d.lat === undefined) === (d.lng === undefined), bothCoordinates[1]);
 
 router.get('/me', controller.getMe);
+router.get('/me/counters', controller.counters);
 router.patch('/me', validate({ body: updateMeBody }), controller.updateMe);
 router.get('/sellers', validate({ query: directoryQuery }), controller.listSellers);
 router.get('/buyers', authorize('seller', 'collector'), validate({ query: directoryQuery }), controller.listBuyers);

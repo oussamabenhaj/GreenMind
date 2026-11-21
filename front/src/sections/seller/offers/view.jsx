@@ -3,13 +3,12 @@ import { useState } from 'react';
 import { m } from 'framer-motion';
 
 import Box from '@mui/material/Box';
-import Tab from '@mui/material/Tab';
 import Card from '@mui/material/Card';
-import Tabs from '@mui/material/Tabs';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
 import { useRouter } from 'src/routes/hooks';
@@ -18,26 +17,29 @@ import { useApi, cleanParams } from 'src/hooks/use-api';
 
 import { fQty, fMoney, fDateTime, GOVERNORATES } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import { endpoints } from 'src/lib/axios';
 import { useSocketEvent } from 'src/lib/socket';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { CellMain, DataTable } from 'src/components/clac/data-table';
+import { CountTabs, useTabCounts } from 'src/components/clac/count-tabs';
+import { useViewMode, ViewModeToggle } from 'src/components/clac/view-mode';
 
 import { useAuthContext } from 'src/auth/hooks';
 
 import { openConversation } from '../components/contact';
 import { printDocument } from '../components/print-button';
 import { Empty, PageHeader, ListSkeleton, PagePagination, useReferenceData } from '../components/ui';
-
 // ----------------------------------------------------------------------
 
 function Countdown({ date }) {
   const d = dayjs(date);
   const days = d.diff(dayjs(), 'day');
   const hours = d.diff(dayjs(), 'hour') % 24;
-  if (d.isBefore(dayjs())) return <Label color="success">En cours</Label>;
+  if (d.isBefore(dayjs())) return <Label color="success">{t('En cours')}</Label>;
   return (
     <Label color="info" startIcon={<Iconify icon="solar:clock-circle-bold" />}>
       J-{days} {hours}h
@@ -58,6 +60,18 @@ export function OffersView({ embedded = false }) {
     cleanParams({ ...filters, timing: filters.timing === 'all' ? '' : filters.timing, limit: 12 })
   );
   useSocketEvent('offer:published', reload);
+  const [view, setView] = useViewMode('market-offers');
+  const counts = useTabCounts(
+    endpoints.offers.list,
+    [
+      { value: 'upcoming', params: { timing: 'upcoming' } },
+      { value: 'ongoing', params: { timing: 'ongoing' } },
+      { value: 'all', params: {} },
+    ],
+    cleanParams({ category_id: filters.category_id, market_id: filters.market_id, gouvernorat: filters.gouvernorat })
+  );
+  const contactPublisher = async (o) =>
+    router.push(await openConversation(o.publisher_id, { body: t('Bonjour, je suis intéressé(e) par votre offre « {{title}} ».', { title: o.title }), context_type: 'offer', context_id: o.id }));
 
   const set = (patch) => setFilters((f) => ({ ...f, page: 1, ...patch }));
 
@@ -65,24 +79,33 @@ export function OffersView({ embedded = false }) {
     <Wrapper {...(!embedded && { maxWidth: 'xl' })}>
       {!embedded && <PageHeader
         icon="solar:calendar-mark-bold-duotone"
-        title="Offres des points de collecte"
-        subtitle="Anticipez les opportunités : lots à venir et offres en cours sur le marché"
+        title={t('Offres des points de collecte')}
+        subtitle={t('Anticipez les opportunités : lots à venir et offres en cours sur le marché')}
       />}
 
       <Card sx={{ mb: 3 }}>
-        <Tabs value={filters.timing} onChange={(_, timing) => set({ timing })} sx={{ px: 2.5, boxShadow: (theme) => `inset 0 -2px 0 0 ${theme.vars.palette.divider}` }}>
-          <Tab value="upcoming" label="À venir" icon={<Iconify icon="solar:calendar-add-bold" />} iconPosition="start" />
-          <Tab value="ongoing" label="En cours" icon={<Iconify icon="solar:play-circle-bold" />} iconPosition="start" />
-          <Tab value="all" label="Toutes" />
-        </Tabs>
+        <Stack direction="row" alignItems="center" sx={{ px: 2.5, boxShadow: (theme) => `inset 0 -2px 0 0 ${theme.vars.palette.divider}` }}>
+          <CountTabs
+            value={filters.timing}
+            onChange={(timing) => set({ timing })}
+            counts={counts}
+            sx={{ flex: 1 }}
+            tabs={[
+              { value: 'upcoming', label: t('À venir'), icon: 'solar:calendar-add-bold', color: 'info' },
+              { value: 'ongoing', label: t('En cours'), icon: 'solar:play-circle-bold', color: 'success' },
+              { value: 'all', label: t('Toutes'), color: 'default' },
+            ]}
+          />
+          <ViewModeToggle value={view} onChange={setView} />
+        </Stack>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ p: 2.5 }}>
           {[
-            ['category_id', 'Catégorie', categories.map((c) => [c.id, c.name])],
-            ['market_id', 'Marché', markets.map((mk) => [mk.id, mk.name])],
-            ['gouvernorat', 'Gouvernorat', GOVERNORATES.map((g) => [g, g])],
+            ['category_id', t('Catégorie'), categories.map((c) => [c.id, c.name])],
+            ['market_id', t('Marché'), markets.map((mk) => [mk.id, mk.name])],
+            ['gouvernorat', t('Gouvernorat'), GOVERNORATES.map((g) => [g, t(g)])],
           ].map(([key, label, options]) => (
             <TextField key={key} select fullWidth label={label} value={filters[key]} onChange={(e) => set({ [key]: e.target.value })}>
-              <MenuItem value="">Tous</MenuItem>
+              <MenuItem value="">{t('Tous')}</MenuItem>
               {options.map(([value, text]) => (
                 <MenuItem key={value} value={value}>
                   {text}
@@ -95,6 +118,32 @@ export function OffersView({ embedded = false }) {
 
       {loading && !data ? (
         <ListSkeleton height={200} />
+      ) : data?.length && view === 'table' ? (
+        <DataTable
+          rows={data}
+          columns={[
+            { label: t('Offre'), render: (o) => <CellMain icon={<Iconify icon="solar:calendar-mark-bold-duotone" />} title={o.title} subtitle={[o.category_name, o.market_name].filter(Boolean).join(' · ')} /> },
+            { label: t('Point de collecte'), render: (o) => <CellMain title={o.collection_point?.name ?? (o.publisher.company_name || o.publisher.name)} subtitle={t(o.gouvernorat)} /> },
+            { label: t('Quantité'), align: 'right', nowrap: true, render: (o) => <b>{fQty(o.quantity, o.unit)}</b> },
+            { label: t('Prix'), align: 'right', nowrap: true, render: (o) => (o.price_per_unit != null ? `${fMoney(o.price_per_unit)} / ${o.unit}` : t('Sur devis')) },
+            { label: t('Début'), nowrap: true, render: (o) => fDateTime(o.starts_at) },
+            { label: t('Fin'), nowrap: true, render: (o) => fDateTime(o.ends_at) },
+            { label: '', render: (o) => <Countdown date={o.starts_at} /> },
+            {
+              label: '',
+              align: 'right',
+              stopPropagation: true,
+              render: (o) => (
+                <>
+                  {o.publisher_id !== user?.id && (
+                    <IconButton color="primary" onClick={() => contactPublisher(o)}><Iconify icon="solar:chat-round-dots-bold" /></IconButton>
+                  )}
+                  <IconButton onClick={() => printDocument('offers', o.id)}><Iconify icon="solar:printer-minimalistic-bold" /></IconButton>
+                </>
+              ),
+            },
+          ]}
+        />
       ) : data?.length ? (
         <Stack spacing={2}>
           {data.map((o, i) => (
@@ -135,24 +184,24 @@ export function OffersView({ embedded = false }) {
                 <Typography variant="h6">{o.title}</Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
                   <Iconify icon="solar:map-point-wave-bold" width={16} sx={{ mr: 0.5, verticalAlign: 'middle', color: 'primary.main' }} />
-                  {o.collection_point?.name ?? (o.publisher.company_name || o.publisher.name)} · {o.gouvernorat ?? '—'}
+                  {o.collection_point?.name ?? (o.publisher.company_name || o.publisher.name)} · {t(o.gouvernorat) ?? '—'}
                 </Typography>
                 <Stack direction="row" spacing={4} sx={{ mt: 2 }}>
                   <Box>
                     <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                      Quantité
+                      {t('Quantité')}
                     </Typography>
                     <Typography variant="subtitle1">{fQty(o.quantity, o.unit)}</Typography>
                   </Box>
                   <Box>
                     <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                      Prix
+                      {t('Prix')}
                     </Typography>
-                    <Typography variant="subtitle1">{o.price_per_unit != null ? `${fMoney(o.price_per_unit)} / ${o.unit}` : 'Sur devis'}</Typography>
+                    <Typography variant="subtitle1">{o.price_per_unit != null ? `${fMoney(o.price_per_unit)} / ${o.unit}` : t('Sur devis')}</Typography>
                   </Box>
                   <Box>
                     <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                      Fin
+                      {t('Fin')}
                     </Typography>
                     <Typography variant="subtitle1">{fDateTime(o.ends_at)}</Typography>
                   </Box>
@@ -160,19 +209,19 @@ export function OffersView({ embedded = false }) {
               </Box>
               <Stack spacing={1} justifyContent="center" sx={{ p: 2.5 }}>
 {o.publisher_id !== user?.id && (
-                <Button variant="contained" startIcon={<Iconify icon="solar:chat-round-dots-bold" />} onClick={async () => router.push(await openConversation(o.publisher_id, { body: `Bonjour, je suis intéressé(e) par votre offre « ${o.title} ».`, context_type: 'offer', context_id: o.id }))}>
-                  Contacter
+                <Button variant="contained" startIcon={<Iconify icon="solar:chat-round-dots-bold" />} onClick={async () => router.push(await openConversation(o.publisher_id, { body: t('Bonjour, je suis intéressé(e) par votre offre « {{title}} ».', { title: o.title }), context_type: 'offer', context_id: o.id }))}>
+                  {t('Contacter')}
                 </Button>
                 )}
                 <Button variant="outlined" color="inherit" startIcon={<Iconify icon="solar:printer-minimalistic-bold" />} onClick={() => printDocument('offers', o.id)}>
-                  Imprimer
+                  {t('Imprimer')}
                 </Button>
               </Stack>
             </Card>
           ))}
         </Stack>
       ) : (
-        <Empty title="Aucune offre" description="Les nouvelles offres apparaissent ici dès leur publication." icon="solar:calendar-search-bold-duotone" />
+        <Empty title={t('Aucune offre')} description={t('Les nouvelles offres apparaissent ici dès leur publication.')} icon="solar:calendar-search-bold-duotone" />
       )}
 
       <PagePagination meta={meta} onChange={(page) => setFilters((f) => ({ ...f, page }))} />

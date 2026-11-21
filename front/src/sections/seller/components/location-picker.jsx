@@ -19,8 +19,9 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { GOVERNORATES } from 'src/utils/clac';
 import { TUNISIA_CITIES } from 'src/utils/tunisia-cities';
 
-import { Iconify } from 'src/components/iconify';
+import { t } from 'src/locales/i18n';
 
+import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 // Geocoding: OpenStreetMap Nominatim (free, no key). Debounced to respect
 // its 1 request/second usage policy, restricted to Tunisia, French labels.
@@ -72,8 +73,8 @@ function Controller({ position, onPick }) {
     if (position) map.flyTo(position, Math.max(map.getZoom(), 13), { duration: 0.8 });
   }, [map, position]);
   useEffect(() => {
-    const t = setTimeout(() => map.invalidateSize(), 300);
-    return () => clearTimeout(t);
+    const tt = setTimeout(() => map.invalidateSize(), 300);
+    return () => clearTimeout(tt);
   }, [map]);
   return null;
 }
@@ -98,7 +99,7 @@ export function LocationPicker({ value, onChange, height = 280 }) {
       return undefined;
     }
     const ctrl = new AbortController();
-    const t = setTimeout(async () => {
+    const tt = setTimeout(async () => {
       setSearching(true);
       try {
         const url = `${NOMINATIM}/search?format=jsonv2&addressdetails=1&countrycodes=tn&accept-language=fr&limit=6&q=${encodeURIComponent(query)}`;
@@ -111,7 +112,7 @@ export function LocationPicker({ value, onChange, height = 280 }) {
       }
     }, 600);
     return () => {
-      clearTimeout(t);
+      clearTimeout(tt);
       ctrl.abort();
     };
   }, [query]);
@@ -152,7 +153,7 @@ export function LocationPicker({ value, onChange, height = 280 }) {
         getOptionLabel={(o) => (typeof o === 'string' ? o : o.display_name)}
         onInputChange={(_, v, reason) => reason === 'input' && setQuery(v)}
         onChange={(_, r) => choose(r)}
-        noOptionsText={query.length < 3 ? 'Tapez au moins 3 caractères' : 'Aucune adresse trouvée'}
+        noOptionsText={query.length < 3 ? t('Tapez au moins 3 caractères') : t('Aucune adresse trouvée')}
         loading={searching}
         renderOption={(props, o) => (
           <li {...props} key={o.place_id}>
@@ -170,8 +171,8 @@ export function LocationPicker({ value, onChange, height = 280 }) {
         renderInput={(params) => (
           <TextField
             {...params}
-            label="Rechercher une adresse"
-            placeholder="Ex : Zone industrielle Sakiet Ezzit, Sfax"
+            label={t('Rechercher une adresse')}
+            placeholder={t('Ex : Zone industrielle Sakiet Ezzit, Sfax')}
             InputProps={{
               ...params.InputProps,
               startAdornment: (
@@ -213,7 +214,7 @@ export function LocationPicker({ value, onChange, height = 280 }) {
           )}
         </MapContainer>
         <Box sx={{ position: 'absolute', zIndex: 500, top: 10, right: 10 }}>
-          <Tooltip title="Utiliser ma position GPS">
+          <Tooltip title={t('Utiliser ma position GPS')}>
             <IconButton onClick={locate} sx={{ bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows.z8, '&:hover': { bgcolor: 'background.neutral' } }}>
               <Iconify icon="solar:gps-bold-duotone" sx={{ color: 'primary.main' }} />
             </IconButton>
@@ -222,18 +223,18 @@ export function LocationPicker({ value, onChange, height = 280 }) {
         <Chip
           size="small"
           icon={resolving ? <CircularProgress size={14} /> : <Iconify icon="solar:cursor-bold" width={16} />}
-          label={hasPoint ? `${value.lat.toFixed(5)}, ${value.lng.toFixed(5)} — glissez le pin pour ajuster` : 'Cliquez sur la carte pour placer le pin'}
+          label={hasPoint ? t('{{toFixed}}, {{toFixed2}} — glissez le pin pour ajuster', { toFixed: value.lat.toFixed(5), toFixed2: value.lng.toFixed(5) }) : t('Cliquez sur la carte pour placer le pin')}
           sx={{ position: 'absolute', zIndex: 500, bottom: 10, left: 10, bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows.z8 }}
         />
       </Box>
 
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 2fr' } }}>
-        <TextField select label="Gouvernorat" value={value?.gouvernorat ?? ''} onChange={(e) => onChange({ gouvernorat: e.target.value })}>
+        <TextField select label={t('Gouvernorat')} value={value?.gouvernorat ?? ''} onChange={(e) => onChange({ gouvernorat: e.target.value })}>
           {GOVERNORATES.map((g) => (
-            <MenuItem key={g} value={g}>{g}</MenuItem>
+            <MenuItem key={g} value={g}>{t(g)}</MenuItem>
           ))}
         </TextField>
-        <TextField label="Adresse" value={value?.address ?? ''} onChange={(e) => onChange({ address: e.target.value })} />
+        <TextField label={t('Adresse')} value={value?.address ?? ''} onChange={(e) => onChange({ address: e.target.value })} />
       </Box>
     </Stack>
   );

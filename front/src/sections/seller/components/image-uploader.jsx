@@ -8,11 +8,11 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import LinearProgress from '@mui/material/LinearProgress';
 
+import { t } from 'src/locales/i18n';
 import axios, { endpoints } from 'src/lib/axios';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
-
 // ----------------------------------------------------------------------
 
 const ACCEPT = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -35,11 +35,11 @@ export function ImageUploader({ value = [], onChange, onUploaded, max = 3 }) {
     const files = [...fileList];
     const invalid = files.find((f) => !ACCEPT.includes(f.type) || f.size > MAX_SIZE);
     if (invalid) {
-      setError(!ACCEPT.includes(invalid.type) ? `« ${invalid.name} » : format non supporté (JPG, PNG, WEBP, GIF)` : `« ${invalid.name} » dépasse 5 Mo`);
+      setError(!ACCEPT.includes(invalid.type) ? t('« {{name}} » : format non supporté (JPG, PNG, WEBP, GIF)', { name: invalid.name }) : t('« {{name}} » dépasse 5 Mo', { name: invalid.name }));
       return;
     }
     if (files.length > remaining) {
-      setError(remaining ? `Vous pouvez encore ajouter ${remaining} image(s) (maximum ${max}).` : `Maximum ${max} images.`);
+      setError(remaining ? t('Vous pouvez encore ajouter {{remaining}} image(s) (maximum {{max}}).', { remaining, max }) : t('Maximum {{max}} images.', { max }));
       return;
     }
     const form = new FormData();
@@ -88,7 +88,7 @@ export function ImageUploader({ value = [], onChange, onUploaded, max = 3 }) {
               <Box component="img" src={url} alt="" sx={{ width: 1, height: 1, objectFit: 'cover' }} />
               {i === 0 && (
                 <Label variant="filled" color="primary" sx={{ position: 'absolute', left: 6, bottom: 6 }}>
-                  Couverture
+                  {t('Couverture')}
                 </Label>
               )}
               <Stack
@@ -98,13 +98,13 @@ export function ImageUploader({ value = [], onChange, onUploaded, max = 3 }) {
                 sx={{ position: 'absolute', top: 6, right: 6, opacity: { xs: 1, md: 0 }, transition: 'opacity .2s' }}
               >
                 {i > 0 && (
-                  <Tooltip title="Mettre en couverture">
+                  <Tooltip title={t('Mettre en couverture')}>
                     <IconButton size="small" onClick={() => makeCover(i)} sx={{ bgcolor: 'rgba(255,255,255,.9)', '&:hover': { bgcolor: 'common.white' } }}>
                       <Iconify icon="solar:star-bold" width={16} sx={{ color: 'warning.main' }} />
                     </IconButton>
                   </Tooltip>
                 )}
-                <Tooltip title="Retirer">
+                <Tooltip title={t('Retirer')}>
                   <IconButton size="small" onClick={() => removeAt(i)} sx={{ bgcolor: 'rgba(255,255,255,.9)', '&:hover': { bgcolor: 'common.white' } }}>
                     <Iconify icon="mingcute:close-line" width={16} sx={{ color: 'error.main' }} />
                   </IconButton>
@@ -154,10 +154,10 @@ export function ImageUploader({ value = [], onChange, onUploaded, max = 3 }) {
             >
               <Iconify icon="solar:gallery-add-bold-duotone" width={26} />
             </Box>
-            <Typography variant="subtitle2">{value.length ? 'Ajouter' : 'Glissez vos photos ici ou cliquez'}</Typography>
+            <Typography variant="subtitle2">{value.length ? t('Ajouter') : t('Glissez vos photos ici ou cliquez')}</Typography>
             {!value.length && (
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                JPG, PNG, WEBP · 5 Mo max · jusqu’à {max} images
+                {t('JPG, PNG, WEBP · 5 Mo max · jusqu’à')} {max} {t('images')}
               </Typography>
             )}
             <input
@@ -180,7 +180,7 @@ export function ImageUploader({ value = [], onChange, onUploaded, max = 3 }) {
       )}
       <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
         <Typography variant="caption" sx={{ color: error ? 'error.main' : 'text.secondary' }}>
-          {error || 'La première image sert de couverture.'}
+          {error || t('La première image sert de couverture.')}
         </Typography>
         <Typography variant="caption" sx={{ color: 'text.disabled' }}>
           {value.length}/{max}

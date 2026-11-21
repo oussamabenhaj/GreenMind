@@ -22,6 +22,7 @@ import { useApi } from 'src/hooks/use-api';
 
 import { GOVERNORATES } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import { endpoints } from 'src/lib/axios';
 
 import { Iconify } from 'src/components/iconify';
@@ -31,7 +32,6 @@ import { signUp } from '../../context/jwt';
 import { useAuthContext } from '../../hooks';
 import { getErrorMessage } from '../../utils';
 import { homeForRole } from '../../guard/guest-guard';
-
 // ----------------------------------------------------------------------
 
 const ROLES = [
@@ -98,12 +98,12 @@ export function JwtSignUpView() {
   return (
     <Box sx={{ maxWidth: 520, width: 1, mx: 'auto' }}>
       <Typography variant="h3" sx={{ mb: 1 }}>
-        Rejoignez l’économie circulaire
+        {t('Rejoignez l’économie circulaire')}
       </Typography>
       <Typography variant="body2" sx={{ color: 'text.secondary', mb: 4 }}>
-        {`Déjà inscrit ? `}
+        {t('Déjà inscrit ? ')}
         <Link component={RouterLink} href={paths.auth.jwt.signIn} variant="subtitle2">
-          Se connecter
+          {t('Se connecter')}
         </Link>
       </Typography>
 
@@ -140,10 +140,10 @@ export function JwtSignUpView() {
                     >
                       <Iconify icon={role.icon} width={30} sx={{ color: selected ? 'primary.dark' : 'text.secondary' }} />
                       <Typography variant="subtitle2" sx={{ mt: 0.5 }}>
-                        {role.label}
+                        {t(role.label)}
                       </Typography>
                       <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.2, display: 'block' }}>
-                        {role.caption}
+                        {t(role.caption)}
                       </Typography>
                     </Box>
                   );
@@ -153,19 +153,19 @@ export function JwtSignUpView() {
           />
 
           <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-            <Field.Text name="name" label="Nom / raison sociale" slotProps={{ inputLabel: { shrink: true } }} />
-            <Field.Text name="company_name" label="Entreprise (optionnel)" slotProps={{ inputLabel: { shrink: true } }} />
-            <Field.Text name="email" label="Email" slotProps={{ inputLabel: { shrink: true } }} />
-            <Field.Text name="phone" label="Téléphone" placeholder="+216 …" slotProps={{ inputLabel: { shrink: true } }} />
+            <Field.Text name="name" label={t('Nom / raison sociale')} slotProps={{ inputLabel: { shrink: true } }} />
+            <Field.Text name="company_name" label={t('Entreprise (optionnel)')} slotProps={{ inputLabel: { shrink: true } }} />
+            <Field.Text name="email" label={t('Email')} slotProps={{ inputLabel: { shrink: true } }} />
+            <Field.Text name="phone" label={t('Téléphone')} placeholder="+216 …" slotProps={{ inputLabel: { shrink: true } }} />
             <Field.Select
               name="gouvernorat"
-              label="Gouvernorat"
-              options={GOVERNORATES.map((g) => ({ value: g, label: g }))}
+              label={t('Gouvernorat')}
+              options={GOVERNORATES.map((g) => ({ value: g, label: t(g) }))}
               slotProps={{ inputLabel: { shrink: true } }}
             />
             <Field.Text
               name="password"
-              label="Mot de passe"
+              label={t('Mot de passe')}
               type={showPassword.value ? 'text' : 'password'}
               slotProps={{
                 inputLabel: { shrink: true },
@@ -184,9 +184,9 @@ export function JwtSignUpView() {
 
           <Box>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Matières qui vous intéressent{' '}
+              {t('Matières qui vous intéressent')}{' '}
               <Typography component="span" variant="caption" sx={{ color: 'text.disabled' }}>
-                (pour recevoir les bonnes demandes et alertes)
+                {t('(pour recevoir les bonnes demandes et alertes)')}
               </Typography>
             </Typography>
             <Controller
@@ -224,11 +224,11 @@ export function JwtSignUpView() {
             endIcon={<Iconify icon="eva:arrow-forward-fill" />}
             sx={{ py: 1.5 }}
           >
-            Créer mon compte
+            {t('Créer mon compte')}
           </LoadingButton>
 
           <Typography variant="caption" sx={{ color: 'text.secondary', textAlign: 'center' }}>
-            En créant un compte, vous acceptez les conditions d’utilisation de CLAC.
+            {t('En créant un compte, vous acceptez les conditions d’utilisation de CLAC.')}
           </Typography>
         </Stack>
       </Form>

@@ -2,9 +2,9 @@ import { io } from 'socket.io-client';
 import { useRef, useState, useEffect, useContext, createContext } from 'react';
 
 import { CONFIG } from 'src/global-config';
+import { localizeEntity } from 'src/locales/localize';
 
 import { TOKEN_STORAGE_KEY } from './axios';
-
 // ----------------------------------------------------------------------
 
 const SocketContext = createContext({ socket: null, connected: false });
@@ -52,7 +52,8 @@ export function useSocketEvent(event, handler) {
 
   useEffect(() => {
     if (!socket) return undefined;
-    const listener = (payload) => handlerRef.current?.(payload);
+    // payloads carry raw multilingual fields (`i18n`): localise them for the current language
+    const listener = (payload) => handlerRef.current?.(localizeEntity(payload));
     socket.on(event, listener);
     return () => socket.off(event, listener);
   }, [socket, event]);

@@ -1,5 +1,5 @@
+import { t } from 'src/locales/i18n';
 import axios, { endpoints } from 'src/lib/axios';
-
 // ----------------------------------------------------------------------
 
 /**
@@ -18,6 +18,6 @@ export async function printDocument(resource, id) {
     else window.open(url, '_blank');
   } catch (error) {
     tab?.close();
-    window.alert(error.message ?? 'Impression impossible');
+    window.alert(error.message ?? t('Impression impossible'));
   }
 }

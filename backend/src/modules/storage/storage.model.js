@@ -86,7 +86,7 @@ export async function listMovements(pointId, f, page) {
   qb.whereIf(f.from, (p) => `sm.created_at >= ${p}`);
   qb.whereIf(f.to, (p) => `sm.created_at <= ${p}`);
   const { rows } = await query(`
-    SELECT sm.*, si.label AS item_label, u.name AS created_by_name, COUNT(*) OVER() AS total_count
+    SELECT sm.*, si.label AS item_label, si.i18n AS item_i18n, u.name AS created_by_name, COUNT(*) OVER() AS total_count
     FROM stock_movements sm
     JOIN stock_items si ON si.id = sm.stock_item_id
     LEFT JOIN users u ON u.id = sm.created_by

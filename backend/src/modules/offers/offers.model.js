@@ -3,7 +3,7 @@ import { QueryBuilder } from '../../utils/queryBuilder.js';
 
 const FIELDS = `o.id, o.publisher_id, o.collection_point_id, o.category_id, o.market_id, o.stock_item_id, o.title,
   o.description, o.quantity, o.unit, o.price_per_unit, o.gouvernorat, o.lat, o.lng, o.starts_at, o.ends_at,
-  o.status, o.published_at, o.created_at, o.updated_at`;
+  o.status, o.published_at, o.created_at, o.updated_at, o.i18n`;
 
 const WRITABLE = ['collection_point_id', 'category_id', 'market_id', 'stock_item_id', 'title', 'description', 'quantity',
   'unit', 'price_per_unit', 'gouvernorat', 'lat', 'lng', 'starts_at', 'ends_at', 'status', 'published_at'];
@@ -16,7 +16,7 @@ const select = (distance = 'NULL::numeric') => `
          ELSE 'ongoing' END AS timing,
     json_build_object('id', u.id, 'name', u.name, 'company_name', u.company_name, 'role', u.role,
                       'is_verified', u.is_verified) AS publisher,
-    CASE WHEN cp.id IS NULL THEN NULL ELSE json_build_object('id', cp.id, 'name', cp.name,
+    CASE WHEN cp.id IS NULL THEN NULL ELSE json_build_object('id', cp.id, 'name', cp.name, 'i18n', cp.i18n,
       'address', cp.address, 'gouvernorat', cp.gouvernorat) END AS collection_point,
     c.name AS category_name, m.name AS market_name,
     ${distance} AS distance_km
@@ -49,7 +49,7 @@ export async function list(f, page, { publisherId = null } = {}) {
   qb.whereIf(f.publisher_id, (p) => `o.publisher_id = ${p}`);
   qb.whereIf(f.min_quantity, (p) => `o.quantity >= ${p}`);
   qb.whereIf(f.max_price, (p) => `o.price_per_unit <= ${p}`);
-  qb.whereIf(f.q && `%${f.q}%`, (p) => `(o.title ILIKE ${p} OR o.description ILIKE ${p})`);
+  qb.whereIf(f.q && `%${f.q}%`, (p) => `(o.title ILIKE ${p} OR o.description ILIKE ${p} OR o.i18n::text ILIKE ${p})`);
   const distance = qb.near('o', f);
   const order = f.sort === 'distance' && f.lat !== undefined ? 'distance_km ASC NULLS LAST'
     : f.sort === 'starts_at' || f.timing === 'upcoming' ? 'o.starts_at ASC'

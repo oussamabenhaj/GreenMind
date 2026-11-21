@@ -1,18 +1,17 @@
 import { Helmet } from 'react-helmet-async';
 
+import { t } from 'src/locales/i18n';
 import { CONFIG } from 'src/global-config';
 
 import { JwtSignInView } from 'src/auth/view/jwt';
-
 // ----------------------------------------------------------------------
 
-const metadata = { title: `Connexion · ${CONFIG.appName}` };
 
 export default function Page() {
   return (
     <>
       <Helmet>
-        <title> {metadata.title}</title>
+        <title>{`${t('Connexion')} · ${CONFIG.appName}`}</title>
       </Helmet>
 
       <JwtSignInView />

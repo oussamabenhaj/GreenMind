@@ -13,12 +13,13 @@ import LinearProgress from '@mui/material/LinearProgress';
 
 import { fNum, fQty, fDate, fMoney, priceOf, initials, fFromNow, unitLabel, ROLE_LABELS, quantityDiscountThreshold } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 import { ImageCarousel } from './image-carousel';
 import { visualFor } from '../seller/components/product-card';
-
 // ----------------------------------------------------------------------
 
 export const KINDS = {
@@ -36,7 +37,7 @@ export function Description({ text, max = 180 }) {
       {long && !open ? `${text.slice(0, max)}… ` : `${text} `}
       {long && (
         <Box component="span" onClick={() => setOpen((o) => !o)} sx={{ color: 'primary.main', fontWeight: 600, cursor: 'pointer' }}>
-          {open ? 'voir moins' : 'voir plus'}
+          {open ? t('voir moins') : t('voir plus')}
         </Box>
       )}
     </Typography>
@@ -66,16 +67,16 @@ function PostShell({ kind, person, place, date, badges, fresh, index, children, 
             {person?.is_verified && <Iconify icon="solar:verified-check-bold" width={18} sx={{ color: 'info.main', flexShrink: 0 }} />}
           </Stack>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            {person?.role && `${ROLE_LABELS[person.role]} · `}
+            {person?.role && `${t(ROLE_LABELS[person.role])} · `}
             <Iconify icon="solar:map-point-bold" width={13} sx={{ mr: 0.25, verticalAlign: '-2px' }} />
-            {place ?? '—'} · {fFromNow(date)}
+            {place ? t(place) : '—'} · {fFromNow(date)}
           </Typography>
         </Box>
         <Stack direction="row" spacing={0.75}>
-          {fresh && <Label color="primary" variant="filled">Nouveau</Label>}
+          {fresh && <Label color="primary" variant="filled">{t('Nouveau')}</Label>}
           {badges}
           <Label color={k.color} startIcon={<Iconify icon={k.icon} width={14} />}>
-            {k.label}
+            {t(k.label)}
           </Label>
         </Stack>
       </Stack>
@@ -110,12 +111,12 @@ export function ProductPost({ item: p, mine, canBuy, onContact, onDetail, onBuy,
   const { base, price, best, percent, bestPercent } = priceOf(p);
   const discountThreshold = p.quantity_discount_enabled ? quantityDiscountThreshold(p) : null;
   return (
-    <PostShell kind="product" person={p.seller} place={p.gouvernorat} date={p.created_at} fresh={fresh} index={index} badges={mine && <Label color="info">Votre produit</Label>}
+    <PostShell kind="product" person={p.seller} place={p.gouvernorat} date={p.created_at} fresh={fresh} index={index} badges={mine && <Label color="info">{t('Votre produit')}</Label>}
       actions={
         <>
-          {!mine && onContact && <Action icon="solar:chat-round-dots-bold-duotone" onClick={onContact}>Contacter</Action>}
-          <Action icon="solar:eye-bold-duotone" onClick={onDetail}>Voir détail</Action>
-          {!mine && canBuy && <Action primary icon="solar:cart-large-2-bold" onClick={onBuy}>Acheter</Action>}
+          {!mine && onContact && <Action icon="solar:chat-round-dots-bold-duotone" onClick={onContact}>{t('Contacter')}</Action>}
+          <Action icon="solar:eye-bold-duotone" onClick={onDetail}>{t('Voir détail')}</Action>
+          {!mine && canBuy && <Action primary icon="solar:cart-large-2-bold" onClick={onBuy}>{t('Acheter')}</Action>}
         </>
       }
     >
@@ -131,15 +132,15 @@ export function ProductPost({ item: p, mine, canBuy, onContact, onDetail, onBuy,
         <Stack direction="row" flexWrap="wrap" gap={0.75}>
           {p.category_name && <Chip size="small" color="primary" variant="soft" label={p.category_name} />}
           {p.market_name && <Chip size="small" variant="outlined" label={p.market_name} />}
-          {p.available_until && <Chip size="small" variant="outlined" icon={<Iconify icon="solar:calendar-bold" width={14} />} label={`Jusqu’au ${fDate(p.available_until)}`} />}
+          {p.available_until && <Chip size="small" variant="outlined" icon={<Iconify icon="solar:calendar-bold" width={14} />} label={t('Jusqu’au {{date}}', { date: fDate(p.available_until) })} />}
         </Stack>
         <Typography variant="h6">{p.title}</Typography>
         <Description text={p.description} />
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, p: 1.5, borderRadius: 1.5, bgcolor: 'background.neutral' }}>
           <Stat
-            label="Prix"
+            label={t('Prix')}
             color="primary.dark"
-            value={base != null ? `${fMoney(price)} / ${p.unit}` : 'Sur devis'}
+            value={base != null ? `${fMoney(price)} / ${p.unit}` : t('Sur devis')}
             sub={percent > 0 && (
               <>
                 <Typography variant="caption" sx={{ color: 'text.disabled', textDecoration: 'line-through', mr: 0.5 }}>
@@ -147,17 +148,17 @@ export function ProductPost({ item: p, mine, canBuy, onContact, onDetail, onBuy,
                 </Typography>
                 {bestPercent > percent && (
                   <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                    jusqu’à {fMoney(best)}
+                    {t('jusqu’à')} {fMoney(best)}
                   </Typography>
                 )}
               </>
             )}
           />
-          <Stat label="Disponible" value={fQty(p.quantity_available, p.unit)} />
+          <Stat label={t('Disponible')} value={fQty(p.quantity_available, p.unit)} />
         </Box>
         {discountThreshold != null && (
           <Label color="success" startIcon={<Iconify icon="solar:tag-price-bold" width={14} />}>
-            Remise vendeur : -10 % au-delà de {fQty(discountThreshold, p.unit)} · -15 % pour tout
+            {t('Remise vendeur : -10 % au-delà de')} {fQty(discountThreshold, p.unit)} {t('· -15 % pour tout')}
           </Label>
         )}
       </Stack>
@@ -169,11 +170,11 @@ export function ProductPost({ item: p, mine, canBuy, onContact, onDetail, onBuy,
 
 export function RequestPost({ item: r, mine, onContact, onDetail, fresh, index }) {
   return (
-    <PostShell kind="request" person={r.buyer && { ...r.buyer, role: 'buyer' }} place={r.gouvernorat} date={r.created_at} fresh={fresh} index={index} badges={mine && <Label color="info">Votre demande</Label>}
+    <PostShell kind="request" person={r.buyer && { ...r.buyer, role: 'buyer' }} place={r.gouvernorat} date={r.created_at} fresh={fresh} index={index} badges={mine && <Label color="info">{t('Votre demande')}</Label>}
       actions={
         <>
-          {!mine && onContact && <Action icon="solar:chat-round-dots-bold-duotone" onClick={onContact}>Contacter</Action>}
-          <Action icon="solar:eye-bold-duotone" onClick={onDetail}>Voir détail</Action>
+          {!mine && onContact && <Action icon="solar:chat-round-dots-bold-duotone" onClick={onContact}>{t('Contacter')}</Action>}
+          <Action icon="solar:eye-bold-duotone" onClick={onDetail}>{t('Voir détail')}</Action>
         </>
       }
     >
@@ -189,18 +190,18 @@ export function RequestPost({ item: r, mine, onContact, onDetail, fresh, index }
         }}
       >
         <Iconify icon="solar:inbox-out-bold-duotone" width={120} sx={{ position: 'absolute', right: -16, bottom: -20, opacity: 0.18 }} />
-        <Typography variant="overline" sx={{ opacity: 0.85 }}>Je recherche</Typography>
+        <Typography variant="overline" sx={{ opacity: 0.85 }}>{t('Je recherche')}</Typography>
         <Typography variant="h3" sx={{ lineHeight: 1.1 }}>{fQty(r.quantity, r.unit)}</Typography>
         <Typography variant="subtitle1" sx={{ opacity: 0.95 }}>{r.category_name ?? r.title}</Typography>
         {r.max_price_per_unit != null && (
-          <Chip size="small" label={`Prix max ${fMoney(r.max_price_per_unit)} / ${r.unit}`} sx={{ mt: 1.5, bgcolor: 'rgba(255,255,255,0.2)', color: 'common.white' }} />
+          <Chip size="small" label={t('Prix max {{amount}} / {{unit}}', { amount: fMoney(r.max_price_per_unit), unit: r.unit })} sx={{ mt: 1.5, bgcolor: 'rgba(255,255,255,0.2)', color: 'common.white' }} />
         )}
       </Box>
       <Stack spacing={1.25} sx={{ px: 2.5, pt: 2, pb: 1.5 }}>
         <Typography variant="h6">{r.title}</Typography>
         <Description text={r.description} />
         <Stack direction="row" flexWrap="wrap" gap={0.75}>
-          {r.needed_by && <Chip size="small" variant="outlined" icon={<Iconify icon="solar:calendar-bold" width={14} />} label={`Pour le ${fDate(r.needed_by)}`} />}
+          {r.needed_by && <Chip size="small" variant="outlined" icon={<Iconify icon="solar:calendar-bold" width={14} />} label={t('Pour le {{date}}', { date: fDate(r.needed_by) })} />}
         </Stack>
       </Stack>
     </PostShell>
@@ -222,7 +223,7 @@ export function ExchangeRatio({ e, compact }) {
   );
   return (
     <Stack direction="row" alignItems="center" spacing={1.5}>
-      <Side title="Vous apportez" qty={e.wanted_quantity} unit={e.wanted_unit} label={e.wanted_label} icon={v.icon} bg="warning.lighter" />
+      <Side title={t('Vous apportez')} qty={e.wanted_quantity} unit={e.wanted_unit} label={e.wanted_label} icon={v.icon} bg="warning.lighter" />
       <Box
         component={m.div}
         animate={{ rotate: [0, 180, 360] }}
@@ -231,7 +232,7 @@ export function ExchangeRatio({ e, compact }) {
       >
         <Iconify icon="solar:refresh-bold" width={24} />
       </Box>
-      <Side title="Vous recevez" qty={e.given_quantity} unit={e.given_unit} label={e.given_label} icon="solar:gift-bold-duotone" bg="success.lighter" />
+      <Side title={t('Vous recevez')} qty={e.given_quantity} unit={e.given_unit} label={e.given_label} icon="solar:gift-bold-duotone" bg="success.lighter" />
     </Stack>
   );
 }
@@ -239,16 +240,16 @@ export function ExchangeRatio({ e, compact }) {
 export function ExchangePost({ item: e, mine, canContact, onContact, onDetail, fresh, index }) {
   const progress = e.max_total_wanted ? Math.min((e.accepted_quantity / e.max_total_wanted) * 100, 100) : null;
   return (
-    <PostShell kind="exchange" person={e.author} place={e.gouvernorat} date={e.created_at} fresh={fresh} index={index} badges={mine && <Label color="info">Votre échange</Label>}
+    <PostShell kind="exchange" person={e.author} place={e.gouvernorat} date={e.created_at} fresh={fresh} index={index} badges={mine && <Label color="info">{t('Votre échange')}</Label>}
       actions={
         <>
-          {!mine && canContact && <Action icon="solar:chat-round-dots-bold-duotone" onClick={onContact}>Contacter</Action>}
-          <Action icon="solar:eye-bold-duotone" onClick={onDetail}>Voir détail</Action>
+          {!mine && canContact && <Action icon="solar:chat-round-dots-bold-duotone" onClick={onContact}>{t('Contacter')}</Action>}
+          <Action icon="solar:eye-bold-duotone" onClick={onDetail}>{t('Voir détail')}</Action>
           {mine ? (
-            <Action primary icon="solar:settings-bold" onClick={onDetail}>Gérer · {e.responses_count}</Action>
+            <Action primary icon="solar:settings-bold" onClick={onDetail}>{t('Gérer ·')} {e.responses_count}</Action>
           ) : (
             <Action primary icon="solar:hand-shake-bold" onClick={onDetail} disabled={e.status !== 'active'}>
-              {e.my_response_status ? 'Ma proposition' : 'Proposer'}
+              {e.my_response_status ? t('Ma proposition') : t('Proposer')}
             </Action>
           )}
         </>
@@ -260,19 +261,19 @@ export function ExchangePost({ item: e, mine, canContact, onContact, onDetail, f
       </Box>
       <Stack spacing={1.25} sx={{ px: 2.5, pt: 2, pb: 1.5 }}>
         <Typography variant="h6">
-          {fNum(e.wanted_quantity)} {unitLabel(e.wanted_unit)} de {e.wanted_label.toLowerCase()} = {fNum(e.given_quantity)} {unitLabel(e.given_unit)} {e.given_label.toLowerCase()}
+          {fNum(e.wanted_quantity)} {unitLabel(e.wanted_unit)} {t('de')} {e.wanted_label.toLowerCase()} = {fNum(e.given_quantity)} {unitLabel(e.given_unit)} {e.given_label.toLowerCase()}
         </Typography>
         <Description text={e.description} />
         <Stack direction="row" flexWrap="wrap" gap={0.75}>
           {e.wanted_category_name && <Chip size="small" color="warning" variant="soft" label={e.wanted_category_name} />}
-          {e.expires_at && <Chip size="small" variant="outlined" icon={<Iconify icon="solar:calendar-bold" width={14} />} label={`Jusqu’au ${fDate(e.expires_at)}`} />}
-          <Chip size="small" variant="outlined" icon={<Iconify icon="solar:users-group-rounded-bold" width={14} />} label={`${e.responses_count} participant(s)`} />
-          {e.my_response_status && <Chip size="small" color="success" variant="soft" label="Vous participez" />}
+          {e.expires_at && <Chip size="small" variant="outlined" icon={<Iconify icon="solar:calendar-bold" width={14} />} label={t('Jusqu’au {{date}}', { date: fDate(e.expires_at) })} />}
+          <Chip size="small" variant="outlined" icon={<Iconify icon="solar:users-group-rounded-bold" width={14} />} label={t('{{responses_count}} participant(s)', { responses_count: e.responses_count })} />
+          {e.my_response_status && <Chip size="small" color="success" variant="soft" label={t('Vous participez')} />}
         </Stack>
         {progress !== null && (
           <Box>
             <Stack direction="row" justifyContent="space-between" sx={{ typography: 'caption', color: 'text.secondary', mb: 0.5 }}>
-              <span>Collecté : {fNum(e.accepted_quantity)} / {fNum(e.max_total_wanted)} {unitLabel(e.wanted_unit)}</span>
+              <span>{t('Collecté :')} {fNum(e.accepted_quantity)} / {fNum(e.max_total_wanted)} {unitLabel(e.wanted_unit)}</span>
               <span>{Math.round(progress)} %</span>
             </Stack>
             <LinearProgress variant="determinate" value={progress} color="warning" sx={{ height: 8, borderRadius: 4 }} />

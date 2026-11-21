@@ -20,6 +20,7 @@ import { useApi } from 'src/hooks/use-api';
 
 import { initials, fFromNow, ROLE_LABELS } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import axios, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { useSocket, useSocketEvent } from 'src/lib/socket';
@@ -31,7 +32,6 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { useAuthContext } from 'src/auth/hooks';
 
 import { Empty, PageHeader } from '../components/ui';
-
 // ----------------------------------------------------------------------
 
 function PersonAvatar({ person, online, size = 44 }) {
@@ -144,7 +144,7 @@ function Thread({ conversation, onActivity }) {
             {conversation.participant.company_name || conversation.participant.name}
           </Typography>
           <Typography variant="caption" sx={{ color: typing ? 'primary.main' : 'text.secondary' }}>
-            {typing ? 'écrit…' : online ? 'En ligne' : 'Hors ligne'} · {ROLE_LABELS[conversation.participant.role]}
+            {typing ? t('écrit…') : online ? t('En ligne') : t('Hors ligne')} · {t(ROLE_LABELS[conversation.participant.role])}
           </Typography>
         </Box>
       </Stack>
@@ -183,7 +183,7 @@ function Thread({ conversation, onActivity }) {
                   >
                     {msg.context_type && (
                       <Label sx={{ mb: 0.75, display: 'inline-flex' }} color={me ? 'default' : 'primary'}>
-                        À propos d’une {msg.context_type === 'request' ? 'demande' : msg.context_type === 'product' ? 'fiche produit' : 'offre'}
+                        {t('À propos d’une')} {msg.context_type === 'request' ? 'demande' : msg.context_type === 'product' ? t('fiche produit') : 'offre'}
                       </Label>
                     )}
                     <div>{msg.body}</div>
@@ -208,7 +208,7 @@ function Thread({ conversation, onActivity }) {
           multiline
           maxRows={4}
           value={text}
-          placeholder="Écrire un message…"
+          placeholder={t('Écrire un message…')}
           onChange={(e) => onType(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -276,7 +276,7 @@ export function ChatView() {
 
   return (
     <DashboardContent maxWidth="xl" sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-      <PageHeader icon="solar:chat-round-dots-bold-duotone" title="Messagerie" subtitle="Échangez en direct avec acheteurs et points de collecte" />
+      <PageHeader icon="solar:chat-round-dots-bold-duotone" title={t('Messagerie')} subtitle={t('Échangez en direct avec acheteurs et points de collecte')} />
 
       <Card sx={{ flex: 1, minHeight: 560, height: 'calc(100vh - 280px)', display: 'flex', overflow: 'hidden' }}>
         <Stack sx={{ width: { xs: currentId ? 0 : 1, md: 340 }, display: { xs: currentId ? 'none' : 'flex', md: 'flex' }, borderRight: 1, borderColor: 'divider' }}>
@@ -284,7 +284,7 @@ export function ChatView() {
             <TextField
               fullWidth
               size="small"
-              placeholder="Rechercher un contact…"
+              placeholder={t('Rechercher un contact…')}
               value={q}
               onChange={(e) => setQ(e.target.value)}
               slotProps={{ input: { startAdornment: <InputAdornment position="start"><Iconify icon="eva:search-fill" /></InputAdornment> } }}
@@ -314,7 +314,7 @@ export function ChatView() {
                       noWrap
                       sx={{ flex: 1, color: c.unread_count ? 'text.primary' : 'text.secondary', fontWeight: c.unread_count ? 600 : 400 }}
                     >
-                      {c.last_message ? `${c.last_message.sender_id === user.id ? 'Vous : ' : ''}${c.last_message.body}` : 'Nouvelle conversation'}
+                      {c.last_message ? `${c.last_message.sender_id === user.id ? t('Vous : ') : ''}${c.last_message.body}` : t('Nouvelle conversation')}
                     </Typography>
                     {!!c.unread_count && (
                       <Box sx={{ minWidth: 20, height: 20, px: 0.75, borderRadius: 10, bgcolor: 'primary.main', color: 'common.white', typography: 'caption', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -327,7 +327,7 @@ export function ChatView() {
             ))}
             {conversations?.length === 0 && (
               <Typography variant="body2" sx={{ p: 3, color: 'text.secondary', textAlign: 'center' }}>
-                Aucune conversation. Contactez un acheteur depuis une demande ou l’annuaire.
+                {t('Aucune conversation. Contactez un acheteur depuis une demande ou l’annuaire.')}
               </Typography>
             )}
           </Scrollbar>
@@ -342,7 +342,7 @@ export function ChatView() {
           </Box>
         ) : (
           <Box sx={{ flex: 1, display: { xs: 'none', md: 'flex' }, alignItems: 'center', justifyContent: 'center', p: 4 }}>
-            <Empty title="Sélectionnez une conversation" description="Les nouveaux messages arrivent en temps réel." icon="solar:chat-square-like-bold-duotone" />
+            <Empty title={t('Sélectionnez une conversation')} description={t('Les nouveaux messages arrivent en temps réel.')} icon="solar:chat-square-like-bold-duotone" />
           </Box>
         )}
       </Card>

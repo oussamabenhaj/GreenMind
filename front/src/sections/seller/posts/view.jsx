@@ -22,6 +22,7 @@ import { useSpace } from 'src/hooks/use-space';
 
 import { fMoney, initials, fFromNow, ROLE_LABELS } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import axios, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -30,7 +31,6 @@ import { Iconify } from 'src/components/iconify';
 import { useAuthContext } from 'src/auth/hooks';
 
 import { Empty, PageHeader, PagePagination } from '../components/ui';
-
 // ----------------------------------------------------------------------
 
 function Composer({ onPosted }) {
@@ -73,12 +73,12 @@ function Composer({ onPosted }) {
             minRows={3}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Partagez une nouvelle campagne, un lot disponible, une actualité… 🌿"
+            placeholder={t('Partagez une nouvelle campagne, un lot disponible, une actualité… 🌿')}
           />
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1.5 }}>
-            <TextField size="small" fullWidth label="Image (URL)" value={image} onChange={(e) => setImage(e.target.value)} />
-            <TextField size="small" select fullWidth label="Lier un produit" value={productId} onChange={(e) => setProductId(e.target.value)}>
-              <MenuItem value="">Aucun</MenuItem>
+            <TextField size="small" fullWidth label={t('Image (URL)')} value={image} onChange={(e) => setImage(e.target.value)} />
+            <TextField size="small" select fullWidth label={t('Lier un produit')} value={productId} onChange={(e) => setProductId(e.target.value)}>
+              <MenuItem value="">{t('Aucun')}</MenuItem>
               {(products ?? []).map((p) => (
                 <MenuItem key={p.id} value={p.id}>
                   {p.title}
@@ -86,7 +86,7 @@ function Composer({ onPosted }) {
               ))}
             </TextField>
             <LoadingButton variant="contained" loading={sending} disabled={!content.trim()} onClick={publish} startIcon={<Iconify icon="solar:plain-bold" />} sx={{ flexShrink: 0 }}>
-              Publier
+              {t('Publier')}
             </LoadingButton>
           </Stack>
           {!!error && (
@@ -114,7 +114,7 @@ function PostCard({ post, canDelete, onDelete }) {
             {post.author.is_verified && <Iconify icon="solar:verified-check-bold" width={16} sx={{ color: 'info.main', ml: 0.5, verticalAlign: 'middle' }} />}
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            {ROLE_LABELS[post.author.role]} · {post.author.gouvernorat} · {fFromNow(post.created_at)}
+            {t(ROLE_LABELS[post.author.role])} · {t(post.author.gouvernorat)} · {fFromNow(post.created_at)}
           </Typography>
         </Box>
         {canDelete && (
@@ -133,11 +133,11 @@ function PostCard({ post, canDelete, onDelete }) {
             <Box sx={{ flex: 1 }}>
               <Typography variant="subtitle2">{post.product.title}</Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                {post.product.price_per_unit != null ? `${fMoney(post.product.price_per_unit)} / ${post.product.unit}` : 'Sur devis'}
+                {post.product.price_per_unit != null ? `${fMoney(post.product.price_per_unit)} / ${post.product.unit}` : t('Sur devis')}
               </Typography>
             </Box>
             <Button component={RouterLink} href={sp.product(post.product.id)} size="small" endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}>
-              Voir
+              {t('Voir')}
             </Button>
           </Stack>
         </>
@@ -159,18 +159,18 @@ export function PostsView() {
 
   return (
     <DashboardContent maxWidth="md">
-      <PageHeader icon="solar:gallery-wide-bold-duotone" title="Publications" subtitle="Présentez vos produits et vos activités à la communauté" />
+      <PageHeader icon="solar:gallery-wide-bold-duotone" title={t('Publications')} subtitle={t('Présentez vos produits et vos activités à la communauté')} />
       <Composer onPosted={() => (tab === 'mine' && page === 1 ? reload() : (setTab('mine'), setPage(1)))} />
       <Tabs value={tab} onChange={(_, v) => { setTab(v); setPage(1); }} sx={{ mb: 3 }}>
-        <Tab value="mine" label="Mes publications" />
-        <Tab value="all" label="Fil de la communauté" />
+        <Tab value="mine" label={t('Mes publications')} />
+        <Tab value="all" label={t('Fil de la communauté')} />
       </Tabs>
       <AnimatePresence>
         {(data ?? []).map((post) => (
           <PostCard key={post.id} post={post} canDelete={post.author_id === user?.id} onDelete={remove} />
         ))}
       </AnimatePresence>
-      {data?.length === 0 && <Empty title="Aucune publication" description="Lancez la conversation avec votre premier post." icon="solar:gallery-wide-bold-duotone" />}
+      {data?.length === 0 && <Empty title={t('Aucune publication')} description={t('Lancez la conversation avec votre premier post.')} icon="solar:gallery-wide-bold-duotone" />}
       <PagePagination meta={meta} onChange={setPage} />
     </DashboardContent>
   );

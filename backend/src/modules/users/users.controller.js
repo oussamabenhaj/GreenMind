@@ -3,6 +3,7 @@ import { wrapController } from '../../utils/asyncHandler.js';
 
 export default wrapController({
   getMe: async (req, res) => res.json({ data: await service.getMe(req.user) }),
+  counters: async (req, res) => res.json({ data: await service.counters(req.user) }),
   updateMe: async (req, res) => res.json({ data: await service.updateMe(req.user, req.body) }),
   getById: async (req, res) => res.json({ data: await service.getPublicProfile(req.params.id) }),
   listSellers: async (req, res) => res.json(await service.listSellers(req.query)),

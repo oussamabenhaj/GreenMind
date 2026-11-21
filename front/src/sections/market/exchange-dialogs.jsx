@@ -24,10 +24,12 @@ import { useRouter } from 'src/routes/hooks';
 
 import { fNum, UNITS, initials, fFromNow, unitLabel, ROLE_LABELS, RESPONSE_STATUS } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import axios, { endpoints } from 'src/lib/axios';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { TranslationNotice } from 'src/components/clac/translation-notice';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -35,7 +37,6 @@ import { Description, ExchangeRatio } from './feed-cards';
 import { openConversation } from '../seller/components/contact';
 import { ImageUploader } from '../seller/components/image-uploader';
 import { StatusLabel, useReferenceData } from '../seller/components/ui';
-
 // ----------------------------------------------------------------------
 
 const EMPTY = {
@@ -101,7 +102,7 @@ export function ExchangeFormDialog({ open, onClose, onSaved }) {
     }
   };
 
-  const preview = { ...f, wanted_category_slug: categories.find((c) => c.id === f.wanted_category_id)?.slug, wanted_label: f.wanted_label || 'Matière', given_label: f.given_label || 'Produit offert' };
+  const preview = { ...f, wanted_category_slug: categories.find((c) => c.id === f.wanted_category_id)?.slug, wanted_label: f.wanted_label || t('Matière'), given_label: f.given_label || t('Produit offert') };
 
   return (
     <Dialog fullWidth maxWidth="md" open={open} onClose={cancel} PaperProps={{ sx: { borderRadius: 2.5 } }}>
@@ -110,9 +111,9 @@ export function ExchangeFormDialog({ open, onClose, onSaved }) {
           <Iconify icon="solar:refresh-square-bold-duotone" width={26} />
         </Box>
         <Box sx={{ flex: 1 }}>
-          <Typography variant="h6">Proposer un échange</Typography>
+          <Typography variant="h6">{t('Proposer un échange')}</Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            Ex : « Pour chaque 5 L d’huile usagée apportée, je donne 1 savon »
+            {t('Ex : « Pour chaque 5 L d’huile usagée apportée, je donne 1 savon »')}
           </Typography>
         </Box>
         <IconButton onClick={cancel}>
@@ -120,32 +121,33 @@ export function ExchangeFormDialog({ open, onClose, onSaved }) {
         </IconButton>
       </DialogTitle>
       <DialogContent sx={{ bgcolor: 'background.neutral', pt: '20px !important' }}>
+        <TranslationNotice item={null} fields={['wanted_label', 'given_label', 'description']} />
         {!!error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
           <Card variant="outlined" sx={{ p: 2.5 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1.5, color: 'warning.dark' }}>① Ce que je veux recevoir</Typography>
+            <Typography variant="subtitle2" sx={{ mb: 1.5, color: 'warning.dark' }}>{t('① Ce que je veux recevoir')}</Typography>
             <Stack spacing={2}>
-              <TextField select label="Catégorie" value={f.wanted_category_id} onChange={set('wanted_category_id')}>
+              <TextField select label={t('Catégorie')} value={f.wanted_category_id} onChange={set('wanted_category_id')}>
                 <MenuItem value="">—</MenuItem>
                 {categories.map((c) => (
                   <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
                 ))}
               </TextField>
-              <TextField label="Matière demandée" placeholder="Ex : Huile de friture usagée" value={f.wanted_label} onChange={set('wanted_label')} />
+              <TextField label={t('Matière demandée')} placeholder={t('Ex : Huile de friture usagée')} value={f.wanted_label} onChange={set('wanted_label')} />
               <Stack direction="row" spacing={1.5}>
-                <TextField fullWidth type="number" label="Quantité" value={f.wanted_quantity} onChange={set('wanted_quantity')} />
-                <TextField select label="Unité" value={f.wanted_unit} onChange={set('wanted_unit')} sx={{ minWidth: 110 }}>
-                  {UNITS.map((u) => <MenuItem key={u.value} value={u.value}>{u.label}</MenuItem>)}
+                <TextField fullWidth type="number" label={t('Quantité')} value={f.wanted_quantity} onChange={set('wanted_quantity')} />
+                <TextField select label={t('Unité')} value={f.wanted_unit} onChange={set('wanted_unit')} sx={{ minWidth: 110 }}>
+                  {UNITS.map((u) => <MenuItem key={u.value} value={u.value}>{t(u.label)}</MenuItem>)}
                 </TextField>
               </Stack>
             </Stack>
-            <Typography variant="subtitle2" sx={{ mt: 3, mb: 1.5, color: 'success.dark' }}>② Ce que je donne en échange</Typography>
+            <Typography variant="subtitle2" sx={{ mt: 3, mb: 1.5, color: 'success.dark' }}>{t('② Ce que je donne en échange')}</Typography>
             <Stack spacing={2}>
-              <TextField label="Produit offert" placeholder="Ex : Savon artisanal à l’huile d’olive" value={f.given_label} onChange={set('given_label')} />
+              <TextField label={t('Produit offert')} placeholder={t('Ex : Savon artisanal à l’huile d’olive')} value={f.given_label} onChange={set('given_label')} />
               <Stack direction="row" spacing={1.5}>
-                <TextField fullWidth type="number" label="Quantité" value={f.given_quantity} onChange={set('given_quantity')} />
-                <TextField select label="Unité" value={f.given_unit} onChange={set('given_unit')} sx={{ minWidth: 110 }}>
-                  {UNITS.map((u) => <MenuItem key={u.value} value={u.value}>{u.label}</MenuItem>)}
+                <TextField fullWidth type="number" label={t('Quantité')} value={f.given_quantity} onChange={set('given_quantity')} />
+                <TextField select label={t('Unité')} value={f.given_unit} onChange={set('given_unit')} sx={{ minWidth: 110 }}>
+                  {UNITS.map((u) => <MenuItem key={u.value} value={u.value}>{t(u.label)}</MenuItem>)}
                 </TextField>
               </Stack>
             </Stack>
@@ -153,26 +155,26 @@ export function ExchangeFormDialog({ open, onClose, onSaved }) {
 
           <Stack spacing={2.5}>
             <Card variant="outlined" sx={{ p: 2.5 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Aperçu</Typography>
+              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>{t('Aperçu')}</Typography>
               <ExchangeRatio e={preview} compact />
             </Card>
             <Card variant="outlined" sx={{ p: 2.5 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Photo (optionnelle)</Typography>
+              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>{t('Photo (optionnelle)')}</Typography>
               <ImageUploader max={1} value={f.images} onUploaded={(urls) => uploads.current.push(...urls)} onChange={(images) => setF((s) => ({ ...s, images }))} />
             </Card>
             <Card variant="outlined" sx={{ p: 2.5 }}>
               <Stack spacing={2}>
-                <TextField label="Détails (optionnel)" multiline rows={2} value={f.description} onChange={set('description')} placeholder="Lieu de dépôt, horaires, conditions…" />
+                <TextField label={t('Détails (optionnel)')} multiline rows={2} value={f.description} onChange={set('description')} placeholder={t('Lieu de dépôt, horaires, conditions…')} />
                 <Stack direction="row" spacing={1.5}>
                   <TextField
                     fullWidth
                     type="number"
-                    label="Quantité totale max"
+                    label={t('Quantité totale max')}
                     value={f.max_total_wanted}
                     onChange={set('max_total_wanted')}
                     slotProps={{ input: { endAdornment: <InputAdornment position="end">{unitLabel(f.wanted_unit)}</InputAdornment> } }}
                   />
-                  <DatePicker label="Valable jusqu’au" value={f.expires_at} onChange={(v) => setF((s) => ({ ...s, expires_at: v }))} disablePast format="DD MMM YYYY" slotProps={{ textField: { fullWidth: true } }} />
+                  <DatePicker label={t('Valable jusqu’au')} value={f.expires_at} onChange={(v) => setF((s) => ({ ...s, expires_at: v }))} disablePast format="DD MMM YYYY" slotProps={{ textField: { fullWidth: true } }} />
                 </Stack>
               </Stack>
             </Card>
@@ -180,9 +182,9 @@ export function ExchangeFormDialog({ open, onClose, onSaved }) {
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button variant="outlined" color="inherit" onClick={cancel}>Annuler</Button>
+        <Button variant="outlined" color="inherit" onClick={cancel}>{t('Annuler')}</Button>
         <LoadingButton size="large" variant="contained" color="warning" loading={saving} disabled={!f.wanted_label || !f.given_label || !(f.wanted_quantity > 0) || !(f.given_quantity > 0)} onClick={save} startIcon={<Iconify icon="solar:plain-bold" />}>
-          Publier l’échange
+          {t('Publier l’échange')}
         </LoadingButton>
       </DialogActions>
     </Dialog>
@@ -245,10 +247,10 @@ export function ExchangeDetailDialog({ id, onClose, onChanged }) {
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography variant="subtitle1" noWrap>{e.author.company_name || e.author.name}</Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                {ROLE_LABELS[e.author.role]} · {e.gouvernorat} · {fFromNow(e.created_at)}
+                {t(ROLE_LABELS[e.author.role])} · {t(e.gouvernorat)} · {fFromNow(e.created_at)}
               </Typography>
             </Box>
-            <Label color={e.status === 'active' ? 'success' : 'default'}>{e.status === 'active' ? 'Active' : 'Clôturée'}</Label>
+            <Label color={e.status === 'active' ? 'success' : 'default'}>{e.status === 'active' ? t('Active') : t('Clôturée')}</Label>
             <IconButton onClick={onClose}><Iconify icon="mingcute:close-line" /></IconButton>
           </DialogTitle>
           <DialogContent>
@@ -258,15 +260,15 @@ export function ExchangeDetailDialog({ id, onClose, onChanged }) {
             <Box sx={{ mt: 2 }}><Description text={e.description} max={400} /></Box>
             {e.max_total_wanted && (
               <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
-                Objectif : {fNum(e.max_total_wanted)} {unitLabel(e.wanted_unit)} · déjà accepté : {fNum(e.accepted_quantity)} {unitLabel(e.wanted_unit)}
+                {t('Objectif :')} {fNum(e.max_total_wanted)} {unitLabel(e.wanted_unit)} {t('· déjà accepté :')} {fNum(e.accepted_quantity)} {unitLabel(e.wanted_unit)}
               </Typography>
             )}
             <Divider sx={{ my: 2.5, borderStyle: 'dashed' }} />
 
             {isAuthor ? (
               <Stack spacing={1.5}>
-                <Typography variant="h6">Propositions reçues <Label sx={{ ml: 1 }}>{e.responses.length}</Label></Typography>
-                {e.responses.length === 0 && <Typography variant="body2" sx={{ color: 'text.secondary' }}>Pas encore de proposition — les vendeurs concernés ont été notifiés.</Typography>}
+                <Typography variant="h6">{t('Propositions reçues')} <Label sx={{ ml: 1 }}>{e.responses.length}</Label></Typography>
+                {e.responses.length === 0 && <Typography variant="body2" sx={{ color: 'text.secondary' }}>{t('Pas encore de proposition — les vendeurs concernés ont été notifiés.')}</Typography>}
                 {e.responses.map((r) => (
                   <Card key={r.id} variant="outlined" sx={{ p: 2, ...(r.status === 'accepted' && { borderColor: 'success.main', bgcolor: 'success.lighter' }) }}>
                     <Stack direction="row" spacing={1.5} alignItems="center">
@@ -274,7 +276,7 @@ export function ExchangeDetailDialog({ id, onClose, onChanged }) {
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography variant="subtitle2" noWrap>{r.responder.company_name || r.responder.name}</Typography>
                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                          apporte <b>{fNum(r.quantity_offered)} {unitLabel(e.wanted_unit)}</b> → reçoit <b>{fNum(Math.floor(r.quantity_offered / e.wanted_quantity) * e.given_quantity)} {unitLabel(e.given_unit)}</b>
+                          {t('apporte')} <b>{fNum(r.quantity_offered)} {unitLabel(e.wanted_unit)}</b> {t('→ reçoit')} <b>{fNum(Math.floor(r.quantity_offered / e.wanted_quantity) * e.given_quantity)} {unitLabel(e.given_unit)}</b>
                         </Typography>
                       </Box>
                       <StatusLabel map={RESPONSE_STATUS} value={r.status} />
@@ -283,12 +285,12 @@ export function ExchangeDetailDialog({ id, onClose, onChanged }) {
                     <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
                       {r.status === 'pending' && (
                         <>
-                          <Button size="small" variant="contained" color="success" disabled={busy} onClick={() => run(() => axios.patch(endpoints.exchanges.response(e.id, r.id), { status: 'accepted' }))}>Accepter</Button>
-                          <Button size="small" variant="soft" color="error" disabled={busy} onClick={() => run(() => axios.patch(endpoints.exchanges.response(e.id, r.id), { status: 'rejected' }))}>Refuser</Button>
+                          <Button size="small" variant="contained" color="success" disabled={busy} onClick={() => run(() => axios.patch(endpoints.exchanges.response(e.id, r.id), { status: 'accepted' }))}>{t('Accepter')}</Button>
+                          <Button size="small" variant="soft" color="error" disabled={busy} onClick={() => run(() => axios.patch(endpoints.exchanges.response(e.id, r.id), { status: 'rejected' }))}>{t('Refuser')}</Button>
                         </>
                       )}
                       <Box sx={{ flexGrow: 1 }} />
-                      <Button size="small" startIcon={<Iconify icon="solar:chat-round-dots-bold" />} onClick={async () => router.push(await openConversation(r.responder_id))}>Discuter</Button>
+                      <Button size="small" startIcon={<Iconify icon="solar:chat-round-dots-bold" />} onClick={async () => router.push(await openConversation(r.responder_id))}>{t('Discuter')}</Button>
                     </Stack>
                   </Card>
                 ))}
@@ -296,21 +298,21 @@ export function ExchangeDetailDialog({ id, onClose, onChanged }) {
             ) : (
               <Stack spacing={2}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="h6">{pending || mine?.status === 'accepted' ? 'Ma proposition' : 'Participer à l’échange'}</Typography>
+                  <Typography variant="h6">{pending || mine?.status === 'accepted' ? t('Ma proposition') : t('Participer à l’échange')}</Typography>
                   {mine && <StatusLabel map={RESPONSE_STATUS} value={mine.status} />}
                 </Stack>
-                {mine?.status === 'accepted' && <Alert severity="success">Votre proposition est acceptée 🤝 — contactez l’auteur pour organiser le dépôt.</Alert>}
+                {mine?.status === 'accepted' && <Alert severity="success">{t('Votre proposition est acceptée 🤝 — contactez l’auteur pour organiser le dépôt.')}</Alert>}
                 {canPropose && (
                   <>
                     <TextField
                       type="number"
-                      label="Quantité que j’apporte"
+                      label={t('Quantité que j’apporte')}
                       value={qty}
                       onChange={(ev) => setQty(ev.target.value)}
                       slotProps={{ input: { endAdornment: <InputAdornment position="end">{unitLabel(e.wanted_unit)}</InputAdornment> } }}
-                      helperText={units > 0 ? `Vous recevrez ${fNum(units * e.given_quantity)} ${unitLabel(e.given_unit)} de ${e.given_label}` : `Minimum ${fNum(e.wanted_quantity)} ${unitLabel(e.wanted_unit)}`}
+                      helperText={units > 0 ? t('Vous recevrez {{n}} {{unit}} de {{given_label}}', { n: fNum(units * e.given_quantity), unit: unitLabel(e.given_unit), given_label: e.given_label }) : t('Minimum {{n}} {{unit}}', { n: fNum(e.wanted_quantity), unit: unitLabel(e.wanted_unit) })}
                     />
-                    <TextField label="Message (optionnel)" multiline rows={2} value={msg} onChange={(ev) => setMsg(ev.target.value)} placeholder="Disponibilité, conditionnement…" />
+                    <TextField label={t('Message (optionnel)')} multiline rows={2} value={msg} onChange={(ev) => setMsg(ev.target.value)} placeholder={t('Disponibilité, conditionnement…')} />
                   </>
                 )}
               </Stack>
@@ -319,22 +321,22 @@ export function ExchangeDetailDialog({ id, onClose, onChanged }) {
           <DialogActions sx={{ px: 3, pb: 2.5 }}>
             {isAuthor ? (
               <>
-                <Button color="error" onClick={() => run(async () => { await axios.delete(endpoints.exchanges.details(e.id)); onClose(); })}>Supprimer</Button>
+                <Button color="error" onClick={() => run(async () => { await axios.delete(endpoints.exchanges.details(e.id)); onClose(); })}>{t('Supprimer')}</Button>
                 <Box sx={{ flexGrow: 1 }} />
                 <Button variant="soft" onClick={() => run(() => axios.patch(endpoints.exchanges.details(e.id), { status: e.status === 'active' ? 'closed' : 'active' }))}>
-                  {e.status === 'active' ? 'Clôturer l’échange' : 'Réouvrir'}
+                  {e.status === 'active' ? t('Clôturer l’échange') : t('Réouvrir')}
                 </Button>
               </>
             ) : (
               <>
                 {user?.role !== 'buyer' && (
-                  <Button startIcon={<Iconify icon="solar:chat-round-dots-bold" />} onClick={async () => router.push(await openConversation(e.author_id, { body: `Bonjour, je suis intéressé(e) par votre échange « ${e.wanted_label} → ${e.given_label} ».` }))}>
-                    Contacter
+                  <Button startIcon={<Iconify icon="solar:chat-round-dots-bold" />} onClick={async () => router.push(await openConversation(e.author_id, { body: t('Bonjour, je suis intéressé(e) par votre échange « {{wanted_label}} → {{given_label}} ».', { wanted_label: e.wanted_label, given_label: e.given_label }) }))}>
+                    {t('Contacter')}
                   </Button>
                 )}
                 <Box sx={{ flexGrow: 1 }} />
                 {pending && (
-                  <Button color="error" disabled={busy} onClick={() => run(() => axios.patch(endpoints.exchanges.response(e.id, mine.id), { status: 'withdrawn' }))}>Retirer</Button>
+                  <Button color="error" disabled={busy} onClick={() => run(() => axios.patch(endpoints.exchanges.response(e.id, mine.id), { status: 'withdrawn' }))}>{t('Retirer')}</Button>
                 )}
                 {canPropose && (
                   <LoadingButton
@@ -351,7 +353,7 @@ export function ExchangeDetailDialog({ id, onClose, onChanged }) {
                       )
                     }
                   >
-                    {pending ? 'Mettre à jour' : 'Envoyer ma proposition'}
+                    {pending ? t('Mettre à jour') : t('Envoyer ma proposition')}
                   </LoadingButton>
                 )}
               </>

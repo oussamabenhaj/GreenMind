@@ -4,6 +4,7 @@ import { paginated, paginationOf } from '../../utils/pagination.js';
 import { withDefaultCoordinates } from '../../utils/geo.js';
 import { emitToAll } from '../../socket/index.js';
 import { SocketEvents } from '../../socket/events.js';
+import { translatedWrite } from '../../i18n/write.js';
 
 /**
  * A listing must stay orderable: an announced minimum order the stock can
@@ -44,9 +45,11 @@ export async function getById(user, id) {
   return product;
 }
 
+const FIELDS = ['title', 'description'];
+
 export async function create(user, data) {
   assertMinimumOrder(data);
-  const id = await model.create(user.id, withDefaultCoordinates(data));
+  const id = await translatedWrite('products', FIELDS, null, withDefaultCoordinates(data), (d) => model.create(user.id, d));
   const product = await model.findById(id);
   // Market feed: everyone connected sees the new publication live.
   if (product.is_active) emitToAll(SocketEvents.PRODUCT_PUBLISHED, product);
@@ -60,7 +63,7 @@ export async function update(user, id, data) {
   if (data.min_order_quantity !== undefined || data.quantity_available !== undefined) {
     assertMinimumOrder({ ...before, ...data });
   }
-  await model.update(id, data);
+  await translatedWrite('products', FIELDS, id, data, (d) => model.update(id, d));
   const product = await model.findById(id);
   if (!before.is_active && product.is_active) emitToAll(SocketEvents.PRODUCT_PUBLISHED, product);
   return product;

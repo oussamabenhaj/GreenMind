@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { CONFIG } from 'src/global-config';
+import { t, currentLang } from 'src/locales/i18n';
 
 // ----------------------------------------------------------------------
 
@@ -11,6 +12,8 @@ const axiosInstance = axios.create({ baseURL: CONFIG.serverUrl, withCredentials:
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem(TOKEN_STORAGE_KEY);
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  // the API localises multilingual fields and messages from this header
+  config.headers['Accept-Language'] = currentLang();
   return config;
 });
 
@@ -34,7 +37,7 @@ axiosInstance.interceptors.response.use(
       message:
         apiError?.details?.[0]?.message && apiError.code === 'VALIDATION_ERROR'
           ? `${apiError.details[0].field} : ${apiError.details[0].message}`
-          : (apiError?.message ?? 'Serveur injoignable. Vérifiez que l’API tourne sur ' + CONFIG.serverUrl),
+          : (apiError?.message ?? t('Serveur injoignable. Vérifiez que l’API tourne sur {{url}}', { url: CONFIG.serverUrl })),
       details: apiError?.details,
     });
   }

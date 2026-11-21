@@ -18,6 +18,7 @@ import { useSpace } from 'src/hooks/use-space';
 
 import { fQty, fDate, fMoney, priceOf, fDateTime, quantityDiscountThreshold } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -31,7 +32,6 @@ import { ProductCover } from '../components/product-card';
 import { printDocument } from '../components/print-button';
 import { ProductFormDialog } from '../components/product-form-dialog';
 import { RequestFormDialog } from '../../buyer/requests/request-form-dialog';
-
 // ----------------------------------------------------------------------
 
 function Info({ icon, label, value }) {
@@ -75,8 +75,8 @@ export function ProductDetailsView() {
 
   return (
     <DashboardContent maxWidth="lg">
-      <Button component={RouterLink} href={mine ? sp.products : sp.marketplace} startIcon={<Iconify icon="eva:arrow-ios-back-fill" />} sx={{ mb: 2 }}>
-        {mine ? 'Mes produits' : 'Marché'}
+      <Button component={RouterLink} href={mine ? sp.products : sp.market} startIcon={<Iconify icon="eva:arrow-ios-back-fill" />} sx={{ mb: 2 }}>
+        {mine ? t('Mes produits') : t('Market')}
       </Button>
 
       <Grid container spacing={3}>
@@ -115,13 +115,13 @@ export function ProductDetailsView() {
             <Stack direction="row" spacing={1}>
               <Label color="primary">{p.category_name}</Label>
               {p.market_name && <Label color="info">{p.market_name}</Label>}
-              <Label color={p.is_active ? 'success' : 'default'}>{p.is_active ? 'Visible' : 'Masqué'}</Label>
+              <Label color={p.is_active ? 'success' : 'default'}>{p.is_active ? t('Visible') : t('Masqué')}</Label>
             </Stack>
             <Typography variant="h3">{p.title}</Typography>
 
             <Stack direction="row" alignItems="baseline" spacing={1.5}>
               <Typography variant="h3" sx={{ color: 'primary.dark' }}>
-                {base == null ? 'Sur devis' : fMoney(price)}
+                {base == null ? t('Sur devis') : fMoney(price)}
               </Typography>
               {percent > 0 && (
                 <>
@@ -140,18 +140,18 @@ export function ProductDetailsView() {
 
             {discountThreshold != null && (
               <Typography variant="body2" sx={{ color: 'success.darker' }}>
-                Remise quantité : -10 % pour toute commande supérieure à {fQty(discountThreshold, p.unit)} (la moitié du stock affiché) et -15 % pour toute la quantité. Appliquée automatiquement aux demandes qui y donnent droit.
+                {t('Remise quantité : -10 % pour toute commande supérieure à')} {fQty(discountThreshold, p.unit)} {t('(la moitié du stock affiché) et -15 % pour toute la quantité. Appliquée automatiquement aux demandes qui y donnent droit.')}
               </Typography>
             )}
 
-            <Typography sx={{ color: 'text.secondary', whiteSpace: 'pre-line' }}>{p.description || 'Aucune description.'}</Typography>
+            <Typography sx={{ color: 'text.secondary', whiteSpace: 'pre-line' }}>{p.description || t('Aucune description.')}</Typography>
 
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: '1fr 1fr' }}>
-              <Info icon="solar:box-bold-duotone" label="Disponible" value={fQty(p.quantity_available, p.unit)} />
-              <Info icon="solar:map-point-bold-duotone" label="Localisation" value={[p.address, p.gouvernorat].filter(Boolean).join(', ')} />
-              <Info icon="solar:calendar-bold-duotone" label="Disponible jusqu’au" value={fDate(p.available_until)} />
-              <Info icon="solar:eye-bold-duotone" label="Vues" value={p.views_count} />
-              <Info icon="solar:clock-circle-bold-duotone" label="Publié le" value={fDateTime(p.created_at)} />
+              <Info icon="solar:box-bold-duotone" label={t('Disponible')} value={fQty(p.quantity_available, p.unit)} />
+              <Info icon="solar:map-point-bold-duotone" label={t('Localisation')} value={[p.address, p.gouvernorat].filter(Boolean).join(', ')} />
+              <Info icon="solar:calendar-bold-duotone" label={t('Disponible jusqu’au')} value={fDate(p.available_until)} />
+              <Info icon="solar:eye-bold-duotone" label={t('Vues')} value={p.views_count} />
+              <Info icon="solar:clock-circle-bold-duotone" label={t('Publié le')} value={fDateTime(p.created_at)} />
             </Box>
 
             <Divider sx={{ borderStyle: 'dashed' }} />
@@ -159,12 +159,12 @@ export function ProductDetailsView() {
             <Stack direction="row" flexWrap="wrap" gap={1.5}>
               {mine && (
                 <Button variant="contained" startIcon={<Iconify icon="solar:pen-bold" />} onClick={() => setEdit(true)}>
-                  Modifier
+                  {t('Modifier')}
                 </Button>
               )}
               {!mine && user?.role === 'buyer' && (
                 <Button variant="contained" startIcon={<Iconify icon="solar:inbox-out-bold" />} onClick={() => setRequestOpen(true)}>
-                  Faire une demande
+                  {t('Faire une demande')}
                 </Button>
               )}
               {!mine && user?.role !== 'seller' && (
@@ -172,14 +172,14 @@ export function ProductDetailsView() {
                   variant="soft"
                   startIcon={<Iconify icon="solar:chat-round-dots-bold" />}
                   onClick={async () =>
-                    router.push(await openConversation(p.seller_id, { body: `Bonjour, je suis intéressé(e) par « ${p.title} ».`, context_type: 'product', context_id: p.id }))
+                    router.push(await openConversation(p.seller_id, { body: t('Bonjour, je suis intéressé(e) par « {{title}} ».', { title: p.title }), context_type: 'product', context_id: p.id }))
                   }
                 >
-                  Contacter le vendeur
+                  {t('Contacter le vendeur')}
                 </Button>
               )}
               <Button variant="outlined" color="inherit" startIcon={<Iconify icon="solar:printer-minimalistic-bold" />} onClick={() => printDocument('products', p.id)}>
-                Imprimer la fiche
+                {t('Imprimer la fiche')}
               </Button>
             </Stack>
           </Stack>

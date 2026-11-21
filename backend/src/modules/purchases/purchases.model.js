@@ -3,7 +3,7 @@ import { QueryBuilder } from '../../utils/queryBuilder.js';
 
 const SELECT = `
   SELECT pu.*,
-    json_build_object('id', cp.id, 'name', cp.name, 'gouvernorat', cp.gouvernorat, 'manager_id', cp.manager_id) AS collection_point,
+    json_build_object('id', cp.id, 'name', cp.name, 'i18n', cp.i18n, 'gouvernorat', cp.gouvernorat, 'manager_id', cp.manager_id) AS collection_point,
     CASE WHEN s.id IS NULL THEN NULL ELSE json_build_object('id', s.id, 'name', s.name,
       'company_name', s.company_name, 'phone', s.phone) END AS seller,
     pr.title AS product_title, c.name AS category_name

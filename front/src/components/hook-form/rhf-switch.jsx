@@ -5,6 +5,8 @@ import Switch from '@mui/material/Switch';
 import FormHelperText from '@mui/material/FormHelperText';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
+import { t } from 'src/locales/i18n';
+
 // ----------------------------------------------------------------------
 
 export function RHFSwitch({ name, label, helperText, slotProps, ...other }) {
@@ -23,7 +25,7 @@ export function RHFSwitch({ name, label, helperText, slotProps, ...other }) {
           />
 
           {(!!error || helperText) && (
-            <FormHelperText error={!!error}>{error?.message ?? helperText}</FormHelperText>
+            <FormHelperText error={!!error}>{(error?.message ? t(error.message) : helperText)}</FormHelperText>
           )}
         </Box>
       )}

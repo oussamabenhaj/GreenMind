@@ -3,6 +3,7 @@ import { transaction } from '../../config/db.js';
 import { ApiError, found } from '../../utils/ApiError.js';
 import { paginated, paginationOf } from '../../utils/pagination.js';
 
+import { translatedWrite } from '../../i18n/write.js';
 /** Throws unless `user` manages the collection point (admins bypass). */
 export async function assertManager(user, pointId) {
   const point = found(await model.findOwner(pointId), 'Point de collecte introuvable');
@@ -28,8 +29,10 @@ export async function getById(user, id) {
   return point;
 }
 
+const FIELDS = ['name', 'description'];
+
 export async function create(user, { schedule, ...data }) {
-  const id = await model.create(user.id, data);
+  const id = await translatedWrite('collection_points', FIELDS, null, data, (d) => model.create(user.id, d));
   if (schedule) await transaction((db) => model.replaceSchedule(id, schedule, db));
   return model.findById(id);
 }
@@ -38,7 +41,7 @@ export async function create(user, { schedule, ...data }) {
 export async function update(user, id, data) {
   await assertManager(user, id);
   const moved = data.lat !== undefined || data.lng !== undefined;
-  await model.update(id, moved && user.role !== 'admin' ? { ...data, is_verified: false } : data);
+  await translatedWrite('collection_points', FIELDS, id, moved && user.role !== 'admin' ? { ...data, is_verified: false } : data, (d) => model.update(id, d));
   return model.findById(id);
 }
 

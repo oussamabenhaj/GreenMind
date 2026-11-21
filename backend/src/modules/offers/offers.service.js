@@ -8,6 +8,7 @@ import { emitToRole } from '../../socket/index.js';
 import { SocketEvents } from '../../socket/events.js';
 import { ApiError, found } from '../../utils/ApiError.js';
 import { paginated, paginationOf } from '../../utils/pagination.js';
+import { translatedWrite } from '../../i18n/write.js';
 
 const toKg = (qty, unit) => Number(qty) * (unit === 't' ? 1000 : 1);
 
@@ -88,13 +89,15 @@ export async function getById(user, id) {
 }
 
 /** US-PC03 — prepare (draft) and optionally publish immediately. */
+const FIELDS = ['title', 'description'];
+
 export async function create(user, { publish = false, ...data }) {
   const payload = await prepare(user, data);
   if (payload.stock_item_id) {
     await assertStockCapacity(payload.collection_point_id, payload.stock_item_id, payload.quantity, payload.unit);
   }
   if (publish) Object.assign(payload, { status: 'published', published_at: new Date() });
-  const offer = await model.findById(await model.create(user.id, payload));
+  const offer = await model.findById(await translatedWrite('offers', FIELDS, null, payload, (d) => model.create(user.id, d)));
   if (publish) await announce(offer);
   return offer;
 }
@@ -117,7 +120,7 @@ export async function update(user, id, data) {
       id,
     );
   }
-  await model.update(id, payload);
+  await translatedWrite('offers', FIELDS, id, payload, (d) => model.update(id, d));
   return model.findById(id);
 }
 

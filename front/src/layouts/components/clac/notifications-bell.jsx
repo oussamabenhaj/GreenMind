@@ -20,13 +20,13 @@ import { useSpace } from 'src/hooks/use-space';
 
 import { fFromNow, NOTIFICATION_ICONS } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import axios, { endpoints } from 'src/lib/axios';
 import { useSocket, useSocketEvent } from 'src/lib/socket';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
-
 // ----------------------------------------------------------------------
 
 /** Maps a notification `link` from the API to a seller route. */
@@ -127,7 +127,7 @@ export function NotificationsBell() {
 
   return (
     <>
-      <Tooltip title="Notifications">
+      <Tooltip title={t('Notifications')}>
         <IconButton onClick={handleOpen}>
           <Badge badgeContent={counters.notifications} color="error" max={99}>
             <m.span
@@ -152,10 +152,10 @@ export function NotificationsBell() {
       >
         <Box sx={{ py: 2, pl: 2.5, pr: 1, display: 'flex', alignItems: 'center' }}>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Notifications
+            {t('Notifications')}
           </Typography>
           {!!counters.notifications && (
-            <Tooltip title="Tout marquer comme lu">
+            <Tooltip title={t('Tout marquer comme lu')}>
               <IconButton color="primary" onClick={markAll}>
                 <Iconify icon="solar:check-read-line-duotone" />
               </IconButton>
@@ -185,7 +185,7 @@ export function NotificationsBell() {
               </AnimatePresence>
             </List>
           ) : (
-            <EmptyContent title="Aucune notification" description="Vous êtes à jour 🌿" sx={{ py: 10 }} />
+            <EmptyContent title={t('Aucune notification')} description={t('Vous êtes à jour 🌿')} sx={{ py: 10 }} />
           )}
         </Scrollbar>
 
@@ -198,7 +198,7 @@ export function NotificationsBell() {
               router.push(sp.notifications);
             }}
           >
-            Voir tout
+            {t('Voir tout')}
           </Button>
         </Box>
       </Drawer>

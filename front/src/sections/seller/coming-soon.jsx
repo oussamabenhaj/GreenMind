@@ -10,11 +10,12 @@ import { useRouter } from 'src/routes/hooks';
 
 import { ROLE_LABELS } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
+
 import { LOGO_URL } from 'src/components/logo';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { signOut } from 'src/auth/context/jwt/action';
-
 // ----------------------------------------------------------------------
 
 /** Landing for roles whose space is not built yet (buyer, collector, admin). */
@@ -31,16 +32,16 @@ export function ComingSoonView() {
   return (
     <>
       <Helmet>
-        <title>Bientôt disponible · CLAC</title>
+        <title>{t('Bientôt disponible · CLAC')}</title>
       </Helmet>
       <Stack alignItems="center" justifyContent="center" spacing={3} sx={{ minHeight: '100vh', p: 3, textAlign: 'center', bgcolor: 'primary.lighter' }}>
-        <Box component="img" src={LOGO_URL} alt="CLAC" sx={{ width: 280 }} />
-        <Typography variant="h3">L’espace {ROLE_LABELS[user?.role] ?? ''} arrive bientôt 🌱</Typography>
+        <Box component="img" src={LOGO_URL} alt={t('CLAC')} sx={{ width: 280 }} />
+        <Typography variant="h3">{t('L’espace')} {ROLE_LABELS[user?.role] ?? ''} {t('arrive bientôt 🌱')}</Typography>
         <Typography sx={{ color: 'text.secondary', maxWidth: 520 }}>
-          Seul l’espace Vendeur est disponible pour le moment. Connectez-vous avec un compte vendeur pour découvrir la plateforme.
+          {t('Seul l’espace Vendeur est disponible pour le moment. Connectez-vous avec un compte vendeur pour découvrir la plateforme.')}
         </Typography>
         <Button variant="contained" size="large" onClick={logout}>
-          Changer de compte
+          {t('Changer de compte')}
         </Button>
       </Stack>
     </>

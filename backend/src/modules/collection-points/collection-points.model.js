@@ -9,7 +9,7 @@ export const OPEN_NOW_SQL = `EXISTS (
     AND (NOW() AT TIME ZONE ${TZ})::time BETWEEN sc.opens_at AND sc.closes_at)`;
 
 const FIELDS = `cp.id, cp.manager_id, cp.name, cp.description, cp.address, cp.gouvernorat, cp.lat, cp.lng,
-  cp.phone, cp.email, cp.storage_capacity_kg, cp.category_ids, cp.is_active, cp.is_verified, cp.created_at, cp.updated_at`;
+  cp.phone, cp.email, cp.storage_capacity_kg, cp.category_ids, cp.is_active, cp.is_verified, cp.created_at, cp.updated_at, cp.i18n`;
 
 const select = (distance = 'NULL::numeric') => `
   SELECT ${FIELDS},
@@ -29,7 +29,7 @@ export async function list(f, page, { managerId = null } = {}) {
   else qb.where('cp.is_active AND cp.is_verified AND u.is_active');
   qb.whereIf(f.gouvernorat, (p) => `cp.gouvernorat = ${p}`);
   qb.whereIf(f.category_id, (p) => `${p}::int = ANY(cp.category_ids)`);
-  qb.whereIf(f.q && `%${f.q}%`, (p) => `(cp.name ILIKE ${p} OR cp.address ILIKE ${p} OR cp.description ILIKE ${p})`);
+  qb.whereIf(f.q && `%${f.q}%`, (p) => `(cp.name ILIKE ${p} OR cp.address ILIKE ${p} OR cp.description ILIKE ${p} OR cp.i18n::text ILIKE ${p})`);
   if (f.open_now) qb.where(OPEN_NOW_SQL);
   const distance = qb.near('cp', f);
   const order = f.lat !== undefined ? 'distance_km ASC' : 'cp.name ASC';

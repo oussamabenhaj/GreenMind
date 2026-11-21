@@ -22,12 +22,13 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { GOVERNORATES } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import axios, { endpoints } from 'src/lib/axios';
 
 import { Iconify } from 'src/components/iconify';
+import { TranslationNotice } from 'src/components/clac/translation-notice';
 
 import { useReferenceData } from '../../seller/components/ui';
-
 // ----------------------------------------------------------------------
 
 export const DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
@@ -107,7 +108,7 @@ export function PointFormDialog({ open, onClose, point, onSaved }) {
         setLocating(false);
       },
       () => {
-        setError('Géolocalisation refusée par le navigateur — cliquez sur la carte pour placer le point.');
+        setError(t('Géolocalisation refusée par le navigateur — cliquez sur la carte pour placer le point.'));
         setLocating(false);
       }
     );
@@ -146,30 +147,31 @@ export function PointFormDialog({ open, onClose, point, onSaved }) {
     <Dialog fullWidth maxWidth="lg" open={open} onClose={onClose}>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Iconify icon="solar:map-point-wave-bold-duotone" width={28} sx={{ color: 'info.main' }} />
-        {point ? 'Modifier le point de collecte' : 'Nouveau point de collecte'}
+        {point ? t('Modifier le point de collecte') : t('Nouveau point de collecte')}
       </DialogTitle>
       <DialogContent>
+        <TranslationNotice item={point} fields={['name', 'description']} />
         {!!error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {!point && <Alert severity="info" sx={{ mb: 2 }}>Le point sera visible sur la carte après validation par un administrateur.</Alert>}
+        {!point && <Alert severity="info" sx={{ mb: 2 }}>{t('Le point sera visible sur la carte après validation par un administrateur.')}</Alert>}
         <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, pt: 1 }}>
           <Stack spacing={2}>
-            <TextField label="Nom du point" value={form.name} onChange={set('name')} />
-            <TextField label="Description" multiline rows={2} value={form.description} onChange={set('description')} />
+            <TextField label={t('Nom du point')} value={form.name} onChange={set('name')} />
+            <TextField label={t('Description')} multiline rows={2} value={form.description} onChange={set('description')} />
             <Stack direction="row" spacing={2}>
-              <TextField fullWidth select label="Gouvernorat" value={form.gouvernorat} onChange={set('gouvernorat')}>
+              <TextField fullWidth select label={t('Gouvernorat')} value={form.gouvernorat} onChange={set('gouvernorat')}>
                 {GOVERNORATES.map((g) => (
-                  <MenuItem key={g} value={g}>{g}</MenuItem>
+                  <MenuItem key={g} value={g}>{t(g)}</MenuItem>
                 ))}
               </TextField>
-              <TextField fullWidth label="Capacité de stockage (kg)" type="number" value={form.storage_capacity_kg} onChange={set('storage_capacity_kg')} />
+              <TextField fullWidth label={t('Capacité de stockage (kg)')} type="number" value={form.storage_capacity_kg} onChange={set('storage_capacity_kg')} />
             </Stack>
-            <TextField label="Adresse" value={form.address} onChange={set('address')} />
+            <TextField label={t('Adresse')} value={form.address} onChange={set('address')} />
             <Stack direction="row" spacing={2}>
-              <TextField fullWidth label="Téléphone" value={form.phone} onChange={set('phone')} />
-              <TextField fullWidth label="Email" value={form.email} onChange={set('email')} />
+              <TextField fullWidth label={t('Téléphone')} value={form.phone} onChange={set('phone')} />
+              <TextField fullWidth label={t('Email')} value={form.email} onChange={set('email')} />
             </Stack>
             <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>Matières acceptées</Typography>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>{t('Matières acceptées')}</Typography>
               <Stack direction="row" flexWrap="wrap" gap={1}>
                 {categories.map((c) => {
                   const on = form.category_ids.includes(c.id);
@@ -190,9 +192,9 @@ export function PointFormDialog({ open, onClose, point, onSaved }) {
 
           <Stack spacing={1.5}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Typography variant="subtitle2">Position GPS — cliquez sur la carte</Typography>
+              <Typography variant="subtitle2">{t('Position GPS — cliquez sur la carte')}</Typography>
               <LoadingButton size="small" variant="soft" loading={locating} onClick={locate} startIcon={<Iconify icon="solar:gps-bold-duotone" />}>
-                Ma position
+                {t('Ma position')}
               </LoadingButton>
             </Stack>
             <Box sx={{ height: 260, borderRadius: 1.5, overflow: 'hidden', '& .leaflet-container': { height: 1 } }}>
@@ -206,18 +208,18 @@ export function PointFormDialog({ open, onClose, point, onSaved }) {
               )}
             </Box>
             <Stack direction="row" spacing={2}>
-              <TextField fullWidth size="small" label="Latitude" type="number" value={form.lat} onChange={(e) => setForm((f) => ({ ...f, lat: Number(e.target.value) }))} />
-              <TextField fullWidth size="small" label="Longitude" type="number" value={form.lng} onChange={(e) => setForm((f) => ({ ...f, lng: Number(e.target.value) }))} />
+              <TextField fullWidth size="small" label={t('Latitude')} type="number" value={form.lat} onChange={(e) => setForm((f) => ({ ...f, lat: Number(e.target.value) }))} />
+              <TextField fullWidth size="small" label={t('Longitude')} type="number" value={form.lng} onChange={(e) => setForm((f) => ({ ...f, lng: Number(e.target.value) }))} />
             </Stack>
 
-            <Typography variant="subtitle2" sx={{ pt: 1 }}>Horaires d’ouverture</Typography>
+            <Typography variant="subtitle2" sx={{ pt: 1 }}>{t('Horaires d’ouverture')}</Typography>
             {schedule.map((d) => (
               <Stack key={d.day_of_week} direction="row" spacing={1.5} alignItems="center">
-                <Typography variant="body2" sx={{ width: 84 }}>{DAYS[d.day_of_week]}</Typography>
+                <Typography variant="body2" sx={{ width: 84 }}>{t(DAYS[d.day_of_week])}</Typography>
                 <FormControlLabel
                   sx={{ m: 0, width: 96 }}
                   control={<Switch size="small" checked={!d.is_closed} onChange={(e) => setDay(d.day_of_week, { is_closed: !e.target.checked })} />}
-                  label={<Typography variant="caption">{d.is_closed ? 'Fermé' : 'Ouvert'}</Typography>}
+                  label={<Typography variant="caption">{d.is_closed ? t('Fermé') : t('Ouvert')}</Typography>}
                 />
                 <TextField size="small" type="time" disabled={d.is_closed} value={d.opens_at} onChange={(e) => setDay(d.day_of_week, { opens_at: e.target.value })} sx={{ flex: 1 }} />
                 <TextField size="small" type="time" disabled={d.is_closed} value={d.closes_at} onChange={(e) => setDay(d.day_of_week, { closes_at: e.target.value })} sx={{ flex: 1 }} />
@@ -227,9 +229,9 @@ export function PointFormDialog({ open, onClose, point, onSaved }) {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Annuler</Button>
+        <Button variant="outlined" color="inherit" onClick={onClose}>{t('Annuler')}</Button>
         <LoadingButton variant="contained" loading={saving} onClick={save} startIcon={<Iconify icon="solar:check-circle-bold" />}>
-          Enregistrer
+          {t('Enregistrer')}
         </LoadingButton>
       </DialogActions>
     </Dialog>

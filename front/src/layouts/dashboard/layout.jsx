@@ -6,6 +6,8 @@ import Alert from '@mui/material/Alert';
 import { useTheme } from '@mui/material/styles';
 import { iconButtonClasses } from '@mui/material/IconButton';
 
+import { LanguageSwitcher } from 'src/locales';
+
 import { Logo } from 'src/components/logo';
 import { useSettingsContext } from 'src/components/settings';
 
@@ -29,6 +31,7 @@ import {
   QuickSearch,
   MarketButton,
   LiveIndicator,
+  AiSearchButton,
 } from '../components/clac/header-actions';
 
 // ----------------------------------------------------------------------
@@ -98,12 +101,14 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
 
           {/** @slot Global search + Market */}
           <QuickSearch />
+          <AiSearchButton />
           <MarketButton />
         </>
       ),
       rightArea: (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 0.75 } }}>
           <LiveIndicator />
+          <LanguageSwitcher sx={{ mx: 0.5 }} />
           <ChatButton />
           <NotificationsBell />
           <SettingsButton />

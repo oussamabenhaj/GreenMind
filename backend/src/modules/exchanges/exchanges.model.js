@@ -3,7 +3,7 @@ import { QueryBuilder } from '../../utils/queryBuilder.js';
 
 const FIELDS = `e.id, e.author_id, e.wanted_category_id, e.wanted_label, e.wanted_quantity, e.wanted_unit,
   e.given_label, e.given_quantity, e.given_unit, e.image_url, e.description, e.max_total_wanted, e.gouvernorat,
-  e.lat, e.lng, e.expires_at, e.status, e.created_at, e.updated_at`;
+  e.lat, e.lng, e.expires_at, e.status, e.created_at, e.updated_at, e.i18n`;
 const WRITABLE = ['wanted_category_id', 'wanted_label', 'wanted_quantity', 'wanted_unit', 'given_label', 'given_quantity',
   'given_unit', 'image_url', 'description', 'max_total_wanted', 'gouvernorat', 'lat', 'lng', 'expires_at', 'status'];
 
@@ -28,7 +28,7 @@ export async function list(f, page, viewerId, { authorId = null } = {}) {
   qb.whereIf(f.category_id, (p) => `e.wanted_category_id = ${p}`);
   qb.whereIf(f.gouvernorat, (p) => `e.gouvernorat = ${p}`);
   qb.whereIf(f.author_id, (p) => `e.author_id = ${p}`);
-  qb.whereIf(f.q && `%${f.q}%`, (p) => `(e.wanted_label ILIKE ${p} OR e.given_label ILIKE ${p} OR e.description ILIKE ${p})`);
+  qb.whereIf(f.q && `%${f.q}%`, (p) => `(e.wanted_label ILIKE ${p} OR e.given_label ILIKE ${p} OR e.description ILIKE ${p} OR e.i18n::text ILIKE ${p})`);
   const { rows } = await query(`
     ${select(`${viewer}::uuid`).replace('SELECT', 'SELECT COUNT(*) OVER() AS total_count,')}
     ${qb.whereSql()}

@@ -3,6 +3,8 @@ import { transformValue, transformValueOnBlur, transformValueOnChange } from 'mi
 
 import TextField from '@mui/material/TextField';
 
+import { t } from 'src/locales/i18n';
+
 // ----------------------------------------------------------------------
 
 export function RHFTextField({ name, helperText, slotProps, type = 'text', ...other }) {
@@ -35,7 +37,7 @@ export function RHFTextField({ name, helperText, slotProps, type = 'text', ...ot
           }}
           type={isNumberType ? 'text' : type}
           error={!!error}
-          helperText={error?.message ?? helperText}
+          helperText={(error?.message ? t(error.message) : helperText)}
           slotProps={{
             ...slotProps,
             htmlInput: {

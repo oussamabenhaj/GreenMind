@@ -85,6 +85,16 @@ Dans les tableaux ci-dessous, la colonne **Rôles** indique qui peut appeler la 
 - Montants en TND, quantités en nombres (pas de chaînes).
 - `unit` ∈ `kg | t | l | unit`. Le stockage des points de collecte est toujours en **kg**.
 
+### Langues (fr / ar)
+
+- Envoyer `Accept-Language: fr` ou `Accept-Language: ar` (ou `?lang=ar`) sur **chaque** requête. Défaut : `fr`. La réponse porte `Content-Language`.
+- **Contenus multilingues** — catégories, marchés, produits, remises, points de collecte, articles de stock, demandes, offres, échanges, notifications ont une colonne `i18n` `{ champ: { fr, ar } }`. L'API renvoie directement les champs (`title`, `name`, `description`, `label`…) **dans la langue demandée**, avec repli sur l'autre langue ; `i18n_missing: ['title']` signale un champ affiché en repli. Les noms joints `category_name`, `market_name`, `product_title`, `item_label` sont aussi traduits.
+- **Saisie à champ unique** — un formulaire n'a qu'**un** input par champ : la valeur envoyée (POST/PATCH) est enregistrée pour la langue de la requête. En `ar`, le texte français existant est conservé ; un texte de repli renvoyé tel quel (non modifié) n'est pas enregistré comme traduction.
+- **Messages** (erreurs, notifications) traduits selon la langue. Les notifications stockent les deux langues.
+- **Socket.IO** — les événements sont diffusés une seule fois avec le champ `i18n` brut : le client choisit la langue (voir `front/src/locales/localize.js`).
+- `PATCH /api/users/me` accepte `preferred_lang: 'fr' | 'ar'` (renvoyé par `GET /api/users/me`).
+- Recherche IA (`GET /api/search/smart`) : comprend aussi l'arabe / la darja (« نحب 2 طن فيتورة في صفاقس أقل من 0,2 دينار »).
+
 ---
 
 ## 2. Authentification

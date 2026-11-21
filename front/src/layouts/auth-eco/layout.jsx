@@ -4,12 +4,14 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
+import { t } from 'src/locales/i18n';
+import { LanguageSwitcher } from 'src/locales';
+
 import { Logo } from 'src/components/logo';
 import { Iconify } from 'src/components/iconify';
 
 import { EcoFilm } from './eco-film';
 import { SettingsButton } from '../components/settings-button';
-
 // ----------------------------------------------------------------------
 
 /**
@@ -41,7 +43,10 @@ export function AuthEcoLayout({ children, wide = false }) {
       >
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: { xs: 3, md: 5 }, pt: 3 }}>
           <Logo />
-          <SettingsButton />
+          <Stack direction="row" spacing={1} alignItems="center">
+            <LanguageSwitcher />
+            <SettingsButton />
+          </Stack>
         </Stack>
 
         <Box
@@ -62,7 +67,7 @@ export function AuthEcoLayout({ children, wide = false }) {
           sx={{ pb: 3, color: 'text.disabled' }}
         >
           <Iconify icon="solar:leaf-bold-duotone" width={18} sx={{ color: 'primary.main' }} />
-          <Typography variant="caption">CLAC · Économie circulaire en Tunisie</Typography>
+          <Typography variant="caption">{t('CLAC · Économie circulaire en Tunisie')}</Typography>
         </Stack>
       </Box>
     </Box>

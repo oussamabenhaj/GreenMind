@@ -1,10 +1,10 @@
-import 'dayjs/locale/fr';
-
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
+import { t, langMeta } from 'src/locales/i18n';
+
+// dayjs locale (fr / ar-tn) is set by src/locales/language-provider
 dayjs.extend(relativeTime);
-dayjs.locale('fr');
 
 // ----------------------------------------------------------------------
 
@@ -21,7 +21,7 @@ export const UNITS = [
   { value: 'unit', label: 'unité' },
 ];
 
-export const unitLabel = (unit) => UNITS.find((u) => u.value === unit)?.label ?? unit;
+export const unitLabel = (unit) => t(UNITS.find((u) => u.value === unit)?.label ?? unit);
 
 export const ROLE_LABELS = {
   seller: 'Vendeur',
@@ -71,10 +71,16 @@ export const NOTIFICATION_ICONS = {
 
 // ----------------------------------------------------------------------
 
-const nf = new Intl.NumberFormat('fr-TN', { maximumFractionDigits: 2 });
+// Tunisian locales (fr-TN / ar-TN both use Latin digits); cached per language
+const formatters = {};
+const nf = () => {
+  const { locale } = langMeta();
+  formatters[locale] = formatters[locale] ?? new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+  return formatters[locale];
+};
 
-export const fNum = (value) => (value === null || value === undefined ? '—' : nf.format(value));
-export const fMoney = (value) => (value === null || value === undefined ? '—' : `${fNum(value)} TND`);
+export const fNum = (value) => (value === null || value === undefined ? '—' : nf().format(value));
+export const fMoney = (value) => (value === null || value === undefined ? '—' : `${fNum(value)} ${t('TND')}`);
 export const fQty = (value, unit) => `${fNum(value)} ${unitLabel(unit)}`;
 
 /**
@@ -101,8 +107,8 @@ export function tierAt(product, quantity) {
     .map((d) => ({ min: Number(d.min_quantity), percentage: Number(d.percentage) }))
     .sort((a, b) => a.min - b.min);
   if (!tiers.length || !(qty > 0)) return null;
-  const current = tiers.reduce((pct, t) => (t.min <= qty ? t.percentage : pct), 0);
-  const next = tiers.find((t) => t.min > qty);
+  const current = tiers.reduce((pct, tier) => (tier.min <= qty ? tier.percentage : pct), 0);
+  const next = tiers.find((tier) => tier.min > qty);
   return { current, next, missing: next ? next.min - qty : 0 };
 }
 

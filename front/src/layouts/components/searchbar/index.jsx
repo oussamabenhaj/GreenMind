@@ -15,6 +15,8 @@ import Dialog, { dialogClasses } from '@mui/material/Dialog';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 import InputBase, { inputBaseClasses } from '@mui/material/InputBase';
 
+import { t } from 'src/locales/i18n';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -22,7 +24,6 @@ import { SearchNotFound } from 'src/components/search-not-found';
 
 import { ResultItem } from './result-item';
 import { applyFilter, flattenNavSections } from './utils';
-
 // ----------------------------------------------------------------------
 
 const breakpoint = 'sm';
@@ -180,7 +181,7 @@ export function Searchbar({ data: navItems = [], sx, ...other }) {
         <InputBase
           fullWidth
           autoFocus={open}
-          placeholder="Search..."
+          placeholder={t('Search...')}
           value={searchQuery}
           onChange={handleSearch}
           startAdornment={
@@ -188,7 +189,7 @@ export function Searchbar({ data: navItems = [], sx, ...other }) {
               <Iconify icon="eva:search-fill" width={24} sx={{ color: 'text.disabled' }} />
             </InputAdornment>
           }
-          endAdornment={<Label sx={{ letterSpacing: 1, color: 'text.secondary' }}>esc</Label>}
+          endAdornment={<Label sx={{ letterSpacing: 1, color: 'text.secondary' }}>{t('esc')}</Label>}
           inputProps={{ id: 'search-input' }}
           sx={{
             p: 3,

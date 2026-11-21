@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 
+import { t } from 'src/locales/i18n';
 // ----------------------------------------------------------------------
 
 export function FormResendCode({ value, disabled, onResendCode, sx, ...other }) {
@@ -16,7 +17,7 @@ export function FormResendCode({ value, disabled, onResendCode, sx, ...other }) 
       ]}
       {...other}
     >
-      {`Don’t have a code? `}
+      {t('Don’t have a code? ')}
       <Link
         variant="subtitle2"
         onClick={onResendCode}
@@ -25,7 +26,7 @@ export function FormResendCode({ value, disabled, onResendCode, sx, ...other }) 
           ...(disabled && { color: 'text.disabled', pointerEvents: 'none' }),
         }}
       >
-        Resend {disabled && value && value > 0 && `(${value}s)`}
+        {t('Resend')} {disabled && value && value > 0 && `(${value}s)`}
       </Link>
     </Box>
   );

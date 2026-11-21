@@ -6,10 +6,10 @@ import { styled } from '@mui/material/styles';
 
 import { RouterLink } from 'src/routes/components';
 
+import { t } from 'src/locales/i18n';
 import { CONFIG } from 'src/global-config';
 
 import { logoClasses } from './classes';
-
 // ----------------------------------------------------------------------
 
 export const LOGO_URL = `${CONFIG.assetsDir}/logo/CLAC_Nature_Eco_Logo-removebg-preview.png`;
@@ -25,7 +25,7 @@ export const Logo = forwardRef((props, ref) => {
       ref={ref}
       component={RouterLink}
       href={href}
-      aria-label="CLAC"
+      aria-label={t('CLAC')}
       underline="none"
       className={mergeClasses([logoClasses.root, className])}
       sx={[
@@ -39,7 +39,7 @@ export const Logo = forwardRef((props, ref) => {
       {...other}
     >
       <img
-        alt="CLAC — Nature & Économie circulaire"
+        alt={t('CLAC — Nature & Économie circulaire')}
         src={LOGO_URL}
         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
       />

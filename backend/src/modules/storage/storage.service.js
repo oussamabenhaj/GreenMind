@@ -8,6 +8,7 @@ import { transaction } from '../../config/db.js';
 import { ApiError, found } from '../../utils/ApiError.js';
 import { paginated, paginationOf } from '../../utils/pagination.js';
 
+import { translatedWrite } from '../../i18n/write.js';
 const ALERT_THRESHOLD = 90; // % of storage capacity
 
 /** US-PC06 — capacity / usage overview + items. */
@@ -33,7 +34,7 @@ export async function listItems(user, pointId) {
 export async function createItem(user, pointId, data) {
   await assertManager(user, pointId);
   const { initial_quantity_kg: initial, ...fields } = data;
-  const item = await model.createItem(pointId, fields);
+  const item = await translatedWrite('stock_items', ['label'], null, fields, (d) => model.createItem(pointId, d));
   if (initial) await applyMovement({ pointId, itemId: item.id, type: 'in', quantity: initial, reason: 'Stock initial', userId: user.id });
   return found(await model.findItem(pointId, item.id));
 }
@@ -41,7 +42,7 @@ export async function createItem(user, pointId, data) {
 export async function updateItem(user, pointId, itemId, data) {
   await assertManager(user, pointId);
   found(await model.findItem(pointId, itemId), 'Article de stock introuvable');
-  await model.updateItem(itemId, data);
+  await translatedWrite('stock_items', ['label'], itemId, data, (d) => model.updateItem(itemId, d));
   return model.findItem(pointId, itemId);
 }
 

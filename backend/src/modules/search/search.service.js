@@ -4,6 +4,8 @@ import * as offersModel from '../offers/offers.model.js';
 import { findPrivateById } from '../users/users.model.js';
 import { GOVERNORATES, normalizeText } from '../../utils/geo.js';
 import { paginationOf } from '../../utils/pagination.js';
+import { currentLang } from '../../i18n/index.js';
+import { arabicToFrench } from './arabic.js';
 
 const ALL_TYPES = ['products', 'sellers', 'buyers', 'offers', 'collection_points', 'requests'];
 
@@ -26,7 +28,9 @@ const STOPWORDS = new Set(('je cherche recherche veux voudrais besoin de des du 
 const UNIT_FACTORS = { kg: 1, kilo: 1, kilos: 1, kilogramme: 1, kilogrammes: 1, t: 1000, tonne: 1000, tonnes: 1000, l: 1, litre: 1, litres: 1 };
 
 export function interpret(raw, categories) {
-  const text = normalizeText(raw);
+  // Arabic / darja queries are first mapped onto the French vocabulary below
+  const { text: translated, arabicWords } = arabicToFrench(raw, categories);
+  const text = normalizeText(translated);
   const out = { raw, filters: {}, detected: [] };
   let residual = ` ${text} `;
   const strip = (fragment) => { residual = residual.replace(fragment, ' '); };
@@ -75,11 +79,15 @@ export function interpret(raw, categories) {
   }
   if (best) {
     out.filters.category_id = best.c.id;
-    out.detected.push({ kind: 'category', value: best.c.id, label: best.c.name, matched: best.hits });
+    const label = best.c.i18n?.name?.[currentLang()] || best.c.name;
+    out.detected.push({ kind: 'category', value: best.c.id, label, matched: best.hits });
     best.hits.forEach((w) => strip(new RegExp(`\\b${w}\\w*`, 'g')));
   }
 
-  const keywords = residual.split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !STOPWORDS.has(w) && !/^\d+$/.test(w));
+  const keywords = [
+    ...residual.split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !STOPWORDS.has(w) && !/^\d+$/.test(w)),
+    ...arabicWords.filter((w) => residual.includes(w)), // unmatched Arabic words search the Arabic translations
+  ];
   if (keywords.length) out.filters.q = keywords.join(' ');
   out.keywords = keywords;
   return out;

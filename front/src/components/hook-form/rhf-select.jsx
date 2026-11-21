@@ -3,6 +3,8 @@ import { Controller, useFormContext } from 'react-hook-form';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 
+import { t } from 'src/locales/i18n';
+
 // ----------------------------------------------------------------------
 
 /**
@@ -22,7 +24,7 @@ export function RHFSelect({ name, label, options = [], helperText, ...other }) {
           fullWidth
           label={label}
           error={!!error}
-          helperText={error?.message ?? helperText}
+          helperText={(error?.message ? t(error.message) : helperText)}
           {...other}
         >
           {options.map((option) => (

@@ -3,6 +3,7 @@ import { emitToUser } from '../../socket/index.js';
 import { SocketEvents } from '../../socket/events.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { paginated, paginationOf } from '../../utils/pagination.js';
+import { msg } from '../../i18n/index.js';
 
 /** Every notification `type` the API can produce. */
 export const NotificationTypes = Object.freeze({
@@ -32,7 +33,9 @@ export async function notify(userIds, notification) {
   const ids = [...new Set((Array.isArray(userIds) ? userIds : [userIds]).filter(Boolean))];
   if (!ids.length) return [];
   try {
-    const rows = await model.createMany(ids, notification);
+    // title/message are written in French; both languages are stored so each reader gets theirs
+    const i18n = { title: msg(notification.title), message: msg(notification.message ?? '') };
+    const rows = await model.createMany(ids, { ...notification, i18n });
     await Promise.all(rows.map(async (row) => {
       emitToUser(row.user_id, SocketEvents.NOTIFICATION_NEW, row);
       emitToUser(row.user_id, SocketEvents.NOTIFICATION_UNREAD_COUNT, { count: await model.countUnread(row.user_id) });

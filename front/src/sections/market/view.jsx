@@ -2,10 +2,8 @@ import { m, AnimatePresence } from 'framer-motion';
 import { useRef, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Tab from '@mui/material/Tab';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
-import Tabs from '@mui/material/Tabs';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -26,11 +24,16 @@ import { cleanParams } from 'src/hooks/use-api';
 
 import { fQty, fDate, fMoney, GOVERNORATES } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import { useSocketEvent } from 'src/lib/socket';
 import axios, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { CellMain, DataTable } from 'src/components/clac/data-table';
+import { CountTabs, useTabCounts } from 'src/components/clac/count-tabs';
+import { useViewMode, ViewModeToggle } from 'src/components/clac/view-mode';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -39,7 +42,6 @@ import { openConversation } from '../seller/components/contact';
 import { RequestFormDialog } from '../buyer/requests/request-form-dialog';
 import { ExchangeFormDialog, ExchangeDetailDialog } from './exchange-dialogs';
 import { KINDS, Description, RequestPost, ProductPost, ExchangePost } from './feed-cards';
-
 // ----------------------------------------------------------------------
 
 const PAGE_SIZE = 6;
@@ -80,17 +82,17 @@ function RequestDetailDialog({ request: r, onClose, actions }) {
     <Dialog fullWidth maxWidth="sm" open={!!r} onClose={onClose}>
       {r && (
         <>
-          <DialogTitle>Demande d’achat — {r.buyer.company_name || r.buyer.name}</DialogTitle>
+          <DialogTitle>{t('Demande d’achat —')} {r.buyer.company_name || r.buyer.name}</DialogTitle>
           <DialogContent>
             <Typography variant="h6" sx={{ mb: 1 }}>{r.title}</Typography>
             <Description text={r.description} max={500} />
             <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, p: 2, borderRadius: 1.5, bgcolor: 'background.neutral' }}>
               {[
-                ['Quantité', fQty(r.quantity, r.unit)],
-                ['Prix max', r.max_price_per_unit != null ? `${fMoney(r.max_price_per_unit)} / ${r.unit}` : '—'],
-                ['Catégorie', r.category_name ?? '—'],
-                ['Pour le', fDate(r.needed_by)],
-                ['Lieu', r.gouvernorat ?? '—'],
+                [t('Quantité'), fQty(r.quantity, r.unit)],
+                [t('Prix max'), r.max_price_per_unit != null ? `${fMoney(r.max_price_per_unit)} / ${r.unit}` : '—'],
+                [t('Catégorie'), r.category_name ?? '—'],
+                [t('Pour le'), fDate(r.needed_by)],
+                [t('Lieu'), r.gouvernorat ?? '—'],
               ].map(([k, v]) => (
                 <Box key={k}>
                   <Typography variant="caption" sx={{ color: 'text.disabled' }}>{k}</Typography>
@@ -100,7 +102,7 @@ function RequestDetailDialog({ request: r, onClose, actions }) {
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button color="inherit" onClick={onClose}>Fermer</Button>
+            <Button color="inherit" onClick={onClose}>{t('Fermer')}</Button>
             {actions}
           </DialogActions>
         </>
@@ -132,6 +134,16 @@ export function MarketView() {
   const [exchangeId, setExchangeId] = useState(searchParams.get('exchange'));
   const [creating, setCreating] = useState(null); // 'exchange' | 'request'
   const sentinel = useRef(null);
+  const [view, setView] = useViewMode('market-feed');
+  const baseCounts = useTabCounts(
+    SOURCES.product.url,
+    Object.entries(SOURCES).map(([k, src]) => ({ value: k, url: src.url, params: src.params(filters) })),
+    {}
+  );
+  const counts = {
+    ...baseCounts,
+    all: Object.keys(SOURCES).every((k) => baseCounts[k] != null) ? Object.keys(SOURCES).reduce((sum, k) => sum + baseCounts[k], 0) : undefined,
+  };
 
   useEffect(() => {
     const id = searchParams.get('exchange');
@@ -175,8 +187,8 @@ export function MarketView() {
   useEffect(() => {
     setItems([]);
     setCursors({});
-    const t = setTimeout(() => loadMore(true), 250);
-    return () => clearTimeout(t);
+    const tt = setTimeout(() => loadMore(true), 250);
+    return () => clearTimeout(tt);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, filters]);
 
@@ -211,6 +223,21 @@ export function MarketView() {
   const set = (patch) => setFilters((f) => ({ ...f, ...patch }));
   const contact = async (userId, body, ctx) => router.push(await openConversation(userId, { body, ...ctx }));
 
+  const openDetail = (it) => {
+    if (it.kind === 'product') router.push(sp.product(it.id));
+    else if (it.kind === 'request') {
+      if (it.buyer_id === user?.id || role === 'seller' || role === 'collector') router.push(`${sp.requests}?r=${it.id}`);
+      else setRequestView(it);
+    } else setExchangeId(it.id);
+  };
+  const personOf = (it) => it.seller ?? it.buyer ?? it.author;
+  const titleOf = (it) => (it.kind === 'exchange' ? `${it.wanted_label} → ${it.given_label}` : it.title);
+  const summaryOf = (it) => {
+    if (it.kind === 'product') return [it.quantity != null && fQty(it.quantity, it.unit), `${fMoney(it.price_per_unit)} / ${it.unit}`].filter(Boolean).join(' · ');
+    if (it.kind === 'request') return `${fQty(it.quantity, it.unit)}${it.max_price_per_unit != null ? t(' · max {{amount}}', { amount: fMoney(it.max_price_per_unit) }) : ''}`;
+    return `${it.wanted_quantity} ${it.wanted_unit} = ${it.given_quantity} ${it.given_unit}`;
+  };
+
   const renderItem = (it, i) => {
     const k = keyOf(it);
     const props = { item: it, index: i, fresh: fresh.includes(k) };
@@ -222,7 +249,7 @@ export function MarketView() {
           {...props}
           mine={mine}
           canBuy={role === 'buyer' || role === 'collector'}
-          onContact={role !== 'seller' ? () => contact(it.seller_id, `Bonjour, je suis intéressé(e) par « ${it.title} ».`, { context_type: 'product', context_id: it.id }) : null}
+          onContact={role !== 'seller' ? () => contact(it.seller_id, t('Bonjour, je suis intéressé(e) par « {{title}} ».', { title: it.title }), { context_type: 'product', context_id: it.id }) : null}
           onDetail={() => router.push(sp.product(it.id))}
           onBuy={() => (role === 'buyer' ? setBuying(it) : router.push(`${sp.purchases}?product=${it.id}`))}
         />
@@ -235,7 +262,7 @@ export function MarketView() {
           key={k}
           {...props}
           mine={mine}
-          onContact={role !== 'buyer' ? () => contact(it.buyer_id, `Bonjour, au sujet de votre demande « ${it.title} ».`, { context_type: 'request', context_id: it.id }) : null}
+          onContact={role !== 'buyer' ? () => contact(it.buyer_id, t('Bonjour, au sujet de votre demande « {{title}} ».', { title: it.title }), { context_type: 'request', context_id: it.id }) : null}
           onDetail={() => (mine ? router.push(`${sp.requests}?r=${it.id}`) : setRequestView(it))}
         />
       );
@@ -246,15 +273,15 @@ export function MarketView() {
         {...props}
         mine={it.author_id === user?.id}
         canContact={role !== 'buyer'}
-        onContact={() => contact(it.author_id, `Bonjour, je suis intéressé(e) par votre échange « ${it.wanted_label} → ${it.given_label} ».`)}
+        onContact={() => contact(it.author_id, t('Bonjour, je suis intéressé(e) par votre échange « {{wanted_label}} → {{given_label}} ».', { wanted_label: it.wanted_label, given_label: it.given_label }))}
         onDetail={() => setExchangeId(it.id)}
       />
     );
   };
 
   return (
-    <DashboardContent maxWidth="lg">
-      <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 640px) 300px' }, justifyContent: 'center', alignItems: 'start' }}>
+    <DashboardContent maxWidth={view === 'table' ? 'xl' : 'lg'}>
+      <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', lg: view === 'table' ? 'minmax(0, 1fr) 300px' : 'minmax(0, 640px) 300px' }, justifyContent: 'center', alignItems: 'start' }}>
         {/* ---------------- feed ---------------- */}
         <Stack spacing={3}>
           <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -262,99 +289,126 @@ export function MarketView() {
               <Iconify icon="solar:shop-2-bold-duotone" width={26} />
             </Box>
             <Box sx={{ flex: 1 }}>
-              <Typography variant="h4">Market</Typography>
+              <Typography variant="h4">{t('Market')}</Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Ventes, demandes d’achat et échanges — en direct
+                {t('Ventes, demandes d’achat et échanges — en direct')}
               </Typography>
             </Box>
           </Stack>
 
           {role === 'buyer' && (
             <Card sx={{ p: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
-              <Typography variant="subtitle2" sx={{ flex: '1 1 100%', mb: -0.5 }}>Publier sur le Market</Typography>
+              <Typography variant="subtitle2" sx={{ flex: '1 1 100%', mb: -0.5 }}>{t('Publier sur le Market')}</Typography>
               <Button variant="soft" color="info" startIcon={<Iconify icon="solar:inbox-out-bold" />} onClick={() => setCreating('request')} sx={{ flex: 1 }}>
-                Demande d’achat
+                {t('Demande d’achat')}
               </Button>
               <Button variant="soft" color="warning" startIcon={<Iconify icon="solar:refresh-square-bold" />} onClick={() => setCreating('exchange')} sx={{ flex: 1 }}>
-                Proposer un échange
+                {t('Proposer un échange')}
               </Button>
             </Card>
           )}
 
-          <Card sx={{ px: 1 }}>
-            <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile>
-              {TABS.map(([v, label, icon]) => (
-                <Tab key={v} value={v} label={label} icon={<Iconify icon={icon} width={18} />} iconPosition="start" sx={{ color: v !== 'all' ? `${KINDS[v].color}.main` : undefined }} />
-              ))}
-            </Tabs>
+          <Card sx={{ px: 1.5, display: 'flex', alignItems: 'center' }}>
+            <CountTabs
+              value={tab}
+              onChange={setTab}
+              counts={counts}
+              sx={{ flex: 1, minWidth: 0 }}
+              tabs={TABS.map(([value, label, icon]) => ({ value, label, icon, color: value === 'all' ? 'default' : KINDS[value].color }))}
+            />
+            <ViewModeToggle value={view} onChange={setView} />
           </Card>
 
           <Card sx={{ p: 2, display: { lg: 'none' } }}>
-            <TextField fullWidth size="small" value={filters.q} onChange={(e) => set({ q: e.target.value })} placeholder="Rechercher…" slotProps={{ input: { startAdornment: <InputAdornment position="start"><Iconify icon="eva:search-fill" /></InputAdornment> } }} />
+            <TextField fullWidth size="small" value={filters.q} onChange={(e) => set({ q: e.target.value })} placeholder={t('Rechercher…')} slotProps={{ input: { startAdornment: <InputAdornment position="start"><Iconify icon="eva:search-fill" /></InputAdornment> } }} />
           </Card>
 
           <AnimatePresence>
             {incoming.length > 0 && (
               <Box component={m.div} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} sx={{ position: 'sticky', top: 84, zIndex: 10, display: 'flex', justifyContent: 'center' }}>
                 <Button variant="contained" onClick={showIncoming} startIcon={<Iconify icon="eva:arrow-upward-fill" />} sx={{ borderRadius: 5, boxShadow: (theme) => theme.customShadows.primary }}>
-                  {incoming.length} nouvelle(s) publication(s)
+                  {incoming.length} {t('nouvelle(s) publication(s)')}
                 </Button>
               </Box>
             )}
           </AnimatePresence>
 
-          {items.map(renderItem)}
+          {view === 'table' && items.length > 0 ? (
+            <DataTable
+              rows={items}
+              rowKey={keyOf}
+              minWidth={600}
+              onRowClick={openDetail}
+              columns={[
+                {
+                  label: t('Publication'),
+                  render: (it) =>
+                    it.kind === 'product' && it.images?.[0] ? (
+                      <CellMain image={it.images[0]} title={titleOf(it)} subtitle={summaryOf(it)} />
+                    ) : (
+                      <CellMain icon={<Iconify icon={KINDS[it.kind].icon} />} color={KINDS[it.kind].color} title={titleOf(it)} subtitle={summaryOf(it)} />
+                    ),
+                },
+                { label: t('Type'), render: (it) => <Label color={KINDS[it.kind].color}>{t(KINDS[it.kind].label)}</Label> },
+                { label: t('Par'), render: (it) => (personOf(it) ? personOf(it).company_name || personOf(it).name : '—') },
+                { label: t('Lieu'), render: (it) => t(it.gouvernorat) ?? '—' },
+                { label: t('Date'), nowrap: true, render: (it) => fDate(it.created_at) },
+              ]}
+            />
+          ) : (
+            items.map(renderItem)
+          )}
 
           {loading && (items.length ? <Stack alignItems="center"><CircularProgress size={28} /></Stack> : [0, 1].map((k) => <PostSkeleton key={k} />))}
           {!loading && !items.length && (
             <Card sx={{ p: 5, textAlign: 'center' }}>
               <Iconify icon="solar:shop-minimalistic-bold-duotone" width={64} sx={{ color: 'primary.light' }} />
-              <Typography variant="h6" sx={{ mt: 1 }}>Aucune publication</Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>Modifiez vos filtres ou revenez plus tard.</Typography>
+              <Typography variant="h6" sx={{ mt: 1 }}>{t('Aucune publication')}</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>{t('Modifiez vos filtres ou revenez plus tard.')}</Typography>
             </Card>
           )}
-          {!hasMore && items.length > 0 && <Typography variant="caption" sx={{ textAlign: 'center', color: 'text.disabled', py: 2 }}>🌿 Vous avez tout vu</Typography>}
+          {!hasMore && items.length > 0 && <Typography variant="caption" sx={{ textAlign: 'center', color: 'text.disabled', py: 2 }}>{t('🌿 Vous avez tout vu')}</Typography>}
           <div ref={sentinel} />
         </Stack>
 
         {/* ---------------- sidebar ---------------- */}
         <Stack spacing={3} sx={{ display: { xs: 'none', lg: 'flex' }, position: 'sticky', top: 88 }}>
           <Card sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" sx={{ mb: 2 }}>Filtrer le fil</Typography>
+            <Typography variant="subtitle1" sx={{ mb: 2 }}>{t('Filtrer le fil')}</Typography>
             <Stack spacing={2}>
-              <TextField size="small" value={filters.q} onChange={(e) => set({ q: e.target.value })} placeholder="Produit, matière…" slotProps={{ input: { startAdornment: <InputAdornment position="start"><Iconify icon="eva:search-fill" /></InputAdornment> } }} />
-              <TextField select size="small" label="Gouvernorat" value={filters.gouvernorat} onChange={(e) => set({ gouvernorat: e.target.value })}>
-                <MenuItem value="">Toute la Tunisie</MenuItem>
-                {GOVERNORATES.map((g) => <MenuItem key={g} value={g}>{g}</MenuItem>)}
+              <TextField size="small" value={filters.q} onChange={(e) => set({ q: e.target.value })} placeholder={t('Produit, matière…')} slotProps={{ input: { startAdornment: <InputAdornment position="start"><Iconify icon="eva:search-fill" /></InputAdornment> } }} />
+              <TextField select size="small" label={t('Gouvernorat')} value={filters.gouvernorat} onChange={(e) => set({ gouvernorat: e.target.value })}>
+                <MenuItem value="">{t('Toute la Tunisie')}</MenuItem>
+                {GOVERNORATES.map((g) => <MenuItem key={g} value={g}>{t(g)}</MenuItem>)}
               </TextField>
               {tab === 'product' && (
-                <TextField select size="small" label="Trier" value={filters.sort} onChange={(e) => set({ sort: e.target.value })}>
-                  <MenuItem value="recent">Plus récentes</MenuItem>
-                  <MenuItem value="popular">Plus vues</MenuItem>
-                  <MenuItem value="price_asc">Prix croissant</MenuItem>
+                <TextField select size="small" label={t('Trier')} value={filters.sort} onChange={(e) => set({ sort: e.target.value })}>
+                  <MenuItem value="recent">{t('Plus récentes')}</MenuItem>
+                  <MenuItem value="popular">{t('Plus vues')}</MenuItem>
+                  <MenuItem value="price_asc">{t('Prix croissant')}</MenuItem>
                 </TextField>
               )}
             </Stack>
-            <Typography variant="overline" sx={{ display: 'block', mt: 2.5, mb: 1, color: 'text.disabled' }}>Catégories</Typography>
+            <Typography variant="overline" sx={{ display: 'block', mt: 2.5, mb: 1, color: 'text.disabled' }}>{t('Catégories')}</Typography>
             <Stack direction="row" flexWrap="wrap" gap={0.75}>
-              <Chip size="small" label="Toutes" color={filters.category_id === '' ? 'primary' : 'default'} onClick={() => set({ category_id: '' })} />
+              <Chip size="small" label={t('Toutes')} color={filters.category_id === '' ? 'primary' : 'default'} onClick={() => set({ category_id: '' })} />
               {categories.map((c) => (
                 <Chip key={c.id} size="small" label={c.name} color={filters.category_id === c.id ? 'primary' : 'default'} variant={filters.category_id === c.id ? 'filled' : 'outlined'} onClick={() => set({ category_id: c.id })} />
               ))}
             </Stack>
           </Card>
           <Card sx={{ p: 2.5 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Légende</Typography>
+            <Typography variant="subtitle2" sx={{ mb: 1.5 }}>{t('Légende')}</Typography>
             <Stack spacing={1}>
               {Object.entries(KINDS).map(([k, v]) => (
                 <Stack key={k} direction="row" spacing={1} alignItems="center">
                   <Iconify icon={v.icon} sx={{ color: `${v.color}.main` }} />
-                  <Typography variant="body2">{v.label}</Typography>
+                  <Typography variant="body2">{t(v.label)}</Typography>
                 </Stack>
               ))}
             </Stack>
             <Typography variant="caption" sx={{ display: 'block', mt: 1.5, color: 'text.secondary' }}>
-              Les produits « Visibles sur le marché », les demandes ouvertes et les échanges actifs apparaissent ici automatiquement, en temps réel.
+              {t('Les produits « Visibles sur le marché », les demandes ouvertes et les échanges actifs apparaissent ici automatiquement, en temps réel.')}
             </Typography>
           </Card>
         </Stack>

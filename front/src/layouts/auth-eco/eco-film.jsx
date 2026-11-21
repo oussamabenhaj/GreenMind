@@ -5,8 +5,9 @@ import Stack from '@mui/material/Stack';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
-import { Iconify } from 'src/components/iconify';
+import { t } from 'src/locales/i18n';
 
+import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 // Animated "film" for the auth page: 4 SVG scenes telling the CLAC story,
 // auto-playing like a video (story progress bars, Ken Burns, pause on hover).
@@ -140,13 +141,13 @@ function SceneHarvest() {
         <g transform="translate(240 372)">
           <path d="M0 0 L150 0 L135 70 L15 70 Z" fill={C.trunk} />
           <rect x="-6" y="-10" width="162" height="14" rx="6" fill="#5E3A1A" />
-          <text x="75" y="45" textAnchor="middle" fontSize="20" fontWeight="700" fill={C.lime}>GRIGNONS</text>
+          <text x="75" y="45" textAnchor="middle" fontSize="20" fontWeight="700" fill={C.lime}>{t('GRIGNONS')}</text>
         </g>
         <g transform="translate(470 215)">
           <rect width="190" height="140" rx="14" fill={C.white} />
           <rect y="0" width="190" height="34" rx="14" fill={C.deep} />
-          <text x="95" y="23" textAnchor="middle" fontSize="16" fontWeight="700" fill={C.white}>Huilerie Sfax Nord</text>
-          <text x="20" y="66" fontSize="14" fill="#476">Matière disponible</text>
+          <text x="95" y="23" textAnchor="middle" fontSize="16" fontWeight="700" fill={C.white}>{t('Huilerie Sfax Nord')}</text>
+          <text x="20" y="66" fontSize="14" fill="#476">{t('Matière disponible')}</text>
           <text x="20" y="96" fontSize="26" fontWeight="800" fill={C.leaf}>25 t</text>
           <rect x="20" y="110" width="150" height="10" rx="5" fill="#E3F6D3" />
           <rect x="20" y="110" width="0" height="10" rx="5" fill={C.leaf}>
@@ -177,12 +178,12 @@ function SceneCollect() {
             <circle r="18" fill={C.lime} />
             <path d="M-8 4 C -8 -10 6 -14 10 -12 C 10 0 2 8 -8 4 Z" fill={C.leaf} />
           </g>
-          <text x="100" y="30" textAnchor="middle" fontSize="15" fontWeight="700" fill={C.deep}>POINT DE COLLECTE</text>
+          <text x="100" y="30" textAnchor="middle" fontSize="15" fontWeight="700" fill={C.deep}>{t('POINT DE COLLECTE')}</text>
         </g>
         <g style={{ animation: 'eco-drive 7s ease-in-out infinite' }}>
           <g transform="translate(0 318)">
             <rect x="0" y="10" width="190" height="80" rx="8" fill={C.leaf} />
-            <text x="95" y="58" textAnchor="middle" fontSize="20" fontWeight="800" fill={C.white}>CLAC ♻</text>
+            <text x="95" y="58" textAnchor="middle" fontSize="20" fontWeight="800" fill={C.white}>{t('CLAC ♻')}</text>
             <path d="M190 30 L240 30 L268 62 L268 90 L190 90 Z" fill={C.deep} />
             <rect x="200" y="38" width="36" height="22" rx="3" fill="#CFEFF9" />
             {[45, 225].map((cx) => (
@@ -262,9 +263,9 @@ function SceneNetwork() {
       <g transform="translate(560 140)">
         <g style={{ animation: 'eco-float 4s ease-in-out infinite' }}>
           <rect width="190" height="120" rx="16" fill={C.white} />
-          <text x="20" y="38" fontSize="14" fill="#476">Acteurs connectés</text>
+          <text x="20" y="38" fontSize="14" fill="#476">{t('Acteurs connectés')}</text>
           <text x="20" y="80" fontSize="38" fontWeight="800" fill={C.leaf}>24</text>
-          <text x="80" y="80" fontSize="16" fill="#476">gouvernorats</text>
+          <text x="80" y="80" fontSize="16" fill="#476">{t('gouvernorats')}</text>
         </g>
       </g>
     </svg>
@@ -274,10 +275,10 @@ function SceneNetwork() {
 // Scene 4 — Real-time: a buyer and a seller negotiate, notifications pop.
 function SceneDeal() {
   const bubbles = [
-    { x: 120, y: 110, w: 300, text: 'Bonjour, 500 L d’huile usagée ?', me: false },
-    { x: 380, y: 190, w: 300, text: 'Disponible chaque semaine ✅', me: true },
-    { x: 120, y: 270, w: 260, text: 'Prix : 0,95 TND / L ?', me: false },
-    { x: 400, y: 350, w: 280, text: 'Marché conclu 🤝🌿', me: true },
+    { x: 120, y: 110, w: 300, text: t('Bonjour, 500 L d’huile usagée ?'), me: false },
+    { x: 380, y: 190, w: 300, text: t('Disponible chaque semaine ✅'), me: true },
+    { x: 120, y: 270, w: 260, text: t('Prix : 0,95 TND / L ?'), me: false },
+    { x: 400, y: 350, w: 280, text: t('Marché conclu 🤝🌿'), me: true },
   ];
   return (
     <svg viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" width="100%" height="100%">
@@ -308,7 +309,7 @@ function SceneDeal() {
       <g transform="translate(560 470)">
         <g style={{ animation: 'eco-pop .6s ease-out both', animationDelay: '5.2s', transformBox: 'fill-box' }}>
           <rect width="190" height="44" rx="22" fill={C.deep} />
-          <text x="95" y="28" textAnchor="middle" fontSize="15" fontWeight="700" fill={C.white}>🔔 Vente confirmée</text>
+          <text x="95" y="28" textAnchor="middle" fontSize="15" fontWeight="700" fill={C.white}>{t('🔔 Vente confirmée')}</text>
         </g>
       </g>
     </svg>
@@ -359,14 +360,14 @@ export function EcoFilm({ sx }) {
 
   useEffect(() => {
     if (!running) return undefined;
-    const t = setTimeout(() => setIndex((i) => (i + 1) % SCENES.length), SCENE_DURATION);
-    return () => clearTimeout(t);
+    const tt = setTimeout(() => setIndex((i) => (i + 1) % SCENES.length), SCENE_DURATION);
+    return () => clearTimeout(tt);
   }, [index, running]);
 
   useEffect(() => {
     if (prev === null) return undefined;
-    const t = setTimeout(() => setSlide((cur) => ({ ...cur, prev: null })), 1000);
-    return () => clearTimeout(t);
+    const tt = setTimeout(() => setSlide((cur) => ({ ...cur, prev: null })), 1000);
+    return () => clearTimeout(tt);
   }, [prev]);
 
   const scene = SCENES[index];
@@ -436,12 +437,12 @@ export function EcoFilm({ sx }) {
               variant="overline"
               sx={{ px: 1.25, py: 0.5, borderRadius: 1, bgcolor: 'rgba(139,211,90,0.25)', color: C.lime, letterSpacing: 2 }}
             >
-              {scene.kicker}
+              {t(scene.kicker)}
             </Typography>
             <Typography variant="h2" sx={{ mt: 2, mb: 1.5, maxWidth: 560, lineHeight: 1.15 }}>
-              {scene.title}
+              {t(scene.title)}
             </Typography>
-            <Typography sx={{ opacity: 0.85, maxWidth: 480, fontSize: 17 }}>{scene.text}</Typography>
+            <Typography sx={{ opacity: 0.85, maxWidth: 480, fontSize: 17 }}>{t(scene.text)}</Typography>
           </Box>
 
         <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 4 }}>

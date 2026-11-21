@@ -10,6 +10,7 @@ import { paginated, paginationOf } from '../../utils/pagination.js';
 import { withDefaultCoordinates } from '../../utils/geo.js';
 import { quantityDiscountPercentage, quantityDiscountedPrice } from '../../utils/pricing.js';
 
+import { translatedWrite } from '../../i18n/write.js';
 const OPEN = ['open', 'in_progress'];
 const STATUS_LABELS = { fulfilled: 'satisfaite', closed: 'clôturée', cancelled: 'annulée', open: 'ré-ouverte', in_progress: 'en cours' };
 
@@ -83,6 +84,8 @@ export async function getById(user, id) {
 }
 
 /** US-B03 — a buyer sends a request (needs + quantity); concerned sellers/collectors are notified live. */
+const FIELDS = ['title', 'description'];
+
 export async function create(user, data) {
   if (data.target_user_id) {
     const target = await findAuthById(data.target_user_id);
@@ -102,7 +105,7 @@ export async function create(user, data) {
   }
   if (!data.category_id && !data.target_user_id) throw ApiError.badRequest('category_id, product_id ou target_user_id est requis');
 
-  const request = await model.findById(await model.create(user.id, withDefaultCoordinates(data)), user.id);
+  const request = await model.findById(await translatedWrite('buy_requests', FIELDS, null, withDefaultCoordinates(data), (d) => model.create(user.id, d)), user.id);
   const recipients = data.target_user_id ? [data.target_user_id] : await model.idsConcernedByCategory(data.category_id, user.id);
   emitToUsers(recipients, SocketEvents.REQUEST_NEW, request);
   await notify(recipients, {
@@ -130,7 +133,7 @@ export async function update(user, id, data) {
   } else {
     data.quantity_discount = false;
   }
-  await model.update(id, data);
+  await translatedWrite('buy_requests', FIELDS, id, data, (d) => model.update(id, d));
   return model.findById(id, user.id);
 }
 

@@ -8,6 +8,7 @@ import { paginated, paginationOf } from '../../utils/pagination.js';
 import { withDefaultCoordinates } from '../../utils/geo.js';
 import { findPrivateById } from '../users/users.model.js';
 
+import { translatedWrite } from '../../i18n/write.js';
 const ratio = (e) => `${Number(e.wanted_quantity)} ${e.wanted_unit} de ${e.wanted_label} → ${Number(e.given_quantity)} ${e.given_unit} de ${e.given_label}`;
 
 const isExpired = (e) => !!e.expires_at && String(e.expires_at) < new Date().toISOString().slice(0, 10);
@@ -48,10 +49,12 @@ export async function getById(user, id) {
 }
 
 /** A buyer publishes "for every X of A you bring, I give Y of B" (optional image). */
+const FIELDS = ['wanted_label', 'given_label', 'description'];
+
 export async function create(user, data) {
   const me = await findPrivateById(user.id);
   const located = data.lat != null ? data : { ...data, lat: me.lat ?? undefined, lng: me.lng ?? undefined };
-  const id = await model.create(user.id, withDefaultCoordinates({ gouvernorat: me.gouvernorat ?? undefined, ...located }));
+  const id = await translatedWrite('exchange_offers', FIELDS, null, withDefaultCoordinates({ gouvernorat: me.gouvernorat ?? undefined, ...located }), (d) => model.create(user.id, d));
   const exchange = await model.findById(id, user.id);
   emitToAll(SocketEvents.EXCHANGE_PUBLISHED, exchange);
   await notify(await model.idsConcerned(exchange.wanted_category_id, user.id), {
@@ -66,7 +69,7 @@ export async function create(user, data) {
 
 export async function update(user, id, data) {
   await getOwned(user, id);
-  await model.update(id, data);
+  await translatedWrite('exchange_offers', FIELDS, id, data, (d) => model.update(id, d));
   return model.findById(id, user.id);
 }
 

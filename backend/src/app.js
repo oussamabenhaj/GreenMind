@@ -5,6 +5,8 @@ import { env, isOriginAllowed } from './config/env.js';
 import { UPLOAD_DIR, PUBLIC_PREFIX } from './modules/uploads/uploads.model.js';
 import apiRoutes from './routes.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
+import { languageMiddleware } from './i18n/index.js';
+import { localizeResponse } from './i18n/localize.js';
 
 const app = express();
 
@@ -19,6 +21,10 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// i18n: request language (Accept-Language: fr|ar) + localisation of every JSON response
+app.use(languageMiddleware);
+app.use(localizeResponse);
 
 if (!env.isProduction) {
   app.use((req, res, next) => {

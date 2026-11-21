@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { useState } from 'react';
 import { m } from 'framer-motion';
 
@@ -19,6 +20,7 @@ import { useApi } from 'src/hooks/use-api';
 
 import { fNum, fQty, fDate, fMoney, initials, fFromNow, REQUEST_STATUS } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import { endpoints } from 'src/lib/axios';
 import { useSocketEvent } from 'src/lib/socket';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -33,13 +35,13 @@ import { Empty, KpiCard, EcoChart, StatusLabel } from '../components/ui';
 
 // ----------------------------------------------------------------------
 
-const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
-const monthLabel = (ym) => MONTHS[Number(ym.slice(5, 7)) - 1];
+// localized short month (fr: « févr. », ar-tn: « فيفري »)
+const monthLabel = (ym) => dayjs(`${ym}-01`).format('MMM');
 
 function Hero({ onNewProduct }) {
   const { user } = useAuthContext();
   const hour = new Date().getHours();
-  const hello = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+  const hello = hour < 12 ? t('Bonjour') : hour < 18 ? t('Bon après-midi') : t('Bonsoir');
   return (
     <Card
       sx={{
@@ -70,13 +72,13 @@ function Hero({ onNewProduct }) {
       />
       <Box sx={{ position: 'relative', maxWidth: 560 }}>
         <Typography variant="overline" sx={{ opacity: 0.8 }}>
-          Espace vendeur
+          {t('Espace vendeur')}
         </Typography>
         <Typography variant="h3" sx={{ mt: 1 }}>
           {hello}, {user?.displayName} 👋
         </Typography>
         <Typography sx={{ mt: 1.5, opacity: 0.85 }}>
-          Suivez vos ventes, répondez aux demandes des acheteurs et donnez une seconde vie à vos matières.
+          {t('Suivez vos ventes, répondez aux demandes des acheteurs et donnez une seconde vie à vos matières.')}
         </Typography>
         <Stack direction="row" flexWrap="wrap" gap={1.5} sx={{ mt: 3 }}>
           <Button
@@ -85,7 +87,7 @@ function Hero({ onNewProduct }) {
             startIcon={<Iconify icon="solar:add-circle-bold" />}
             sx={{ bgcolor: 'common.white', color: 'primary.darker', '&:hover': { bgcolor: 'primary.lighter' } }}
           >
-            Publier une matière
+            {t('Publier une matière')}
           </Button>
           <Button
             component={RouterLink}
@@ -94,7 +96,7 @@ function Hero({ onNewProduct }) {
             startIcon={<Iconify icon="solar:inbox-in-bold-duotone" />}
             sx={{ color: 'common.white', borderColor: 'rgba(255,255,255,0.5)' }}
           >
-            Demandes reçues
+            {t('Demandes reçues')}
           </Button>
           <Button
             component={RouterLink}
@@ -103,7 +105,7 @@ function Hero({ onNewProduct }) {
             startIcon={<Iconify icon="solar:magic-stick-3-bold-duotone" />}
             sx={{ color: 'common.white', borderColor: 'rgba(255,255,255,0.5)' }}
           >
-            Recherche IA
+            {t('Recherche IA')}
           </Button>
         </Stack>
       </Box>
@@ -126,7 +128,7 @@ export function SellerDashboardView() {
   useSocketEvent('purchase:updated', () => overview.reload());
 
   const o = overview.data;
-  const series = (timeline.data ?? []).map((t) => ({ label: monthLabel(t.month), value: t.amount }));
+  const series = (timeline.data ?? []).map((tt) => ({ label: monthLabel(tt.month), value: tt.amount }));
 
   return (
     <DashboardContent maxWidth="xl">
@@ -136,9 +138,9 @@ export function SellerDashboardView() {
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <KpiCard
             loading={overview.loading}
-            title="Produits actifs"
+            title={t('Produits actifs')}
             value={o ? `${o.products.active}/${o.products.total}` : '—'}
-            caption={o ? `${fNum(o.products.stock_kg)} kg en stock` : ''}
+            caption={o ? t('{{n}} kg en stock', { n: fNum(o.products.stock_kg) }) : ''}
             icon="solar:box-bold-duotone"
           />
         </Grid>
@@ -147,9 +149,9 @@ export function SellerDashboardView() {
             loading={overview.loading}
             delay={0.05}
             color="info"
-            title="Vues des produits"
+            title={t('Vues des produits')}
             value={o ? fNum(o.products.total_views) : '—'}
-            caption="Toutes périodes"
+            caption={t('Toutes périodes')}
             icon="solar:eye-bold-duotone"
           />
         </Grid>
@@ -158,9 +160,9 @@ export function SellerDashboardView() {
             loading={overview.loading}
             delay={0.1}
             color="secondary"
-            title="Chiffre d’affaires (12 mois)"
+            title={t('Chiffre d’affaires (12 mois)')}
             value={o ? fMoney(o.sales.revenue) : '—'}
-            caption={o ? `${fNum(o.sales.sold_kg)} kg vendus` : ''}
+            caption={o ? t('{{n}} kg vendus', { n: fNum(o.sales.sold_kg) }) : ''}
             icon="solar:wallet-money-bold-duotone"
           />
         </Grid>
@@ -168,11 +170,11 @@ export function SellerDashboardView() {
         <Grid size={{ xs: 12 }}>
           <Card sx={{ height: 1 }}>
             <CardHeader
-              title="Revenus mensuels"
-              subheader="Achats réceptionnés par les points de collecte"
+              title={t('Revenus mensuels')}
+              subheader={t('Achats réceptionnés par les points de collecte')}
               action={
                 <Button component={RouterLink} href={paths.seller.reports} size="small" endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}>
-                  Détails
+                  {t('Détails')}
                 </Button>
               }
             />
@@ -185,17 +187,17 @@ export function SellerDashboardView() {
         <Grid size={{ xs: 12 }}>
           <Card>
             <CardHeader
-              title="Dernières demandes reçues"
-              subheader="Acheteurs intéressés par vos catégories"
+              title={t('Dernières demandes reçues')}
+              subheader={t('Acheteurs intéressés par vos catégories')}
               action={
                 <Button component={RouterLink} href={paths.seller.requests} size="small" endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}>
-                  Tout voir
+                  {t('Tout voir')}
                 </Button>
               }
             />
             <Box sx={{ p: 1.5 }}>
               {(requests.data ?? []).length === 0 && !requests.loading && (
-                <Empty title="Aucune demande pour le moment" description="Elles apparaîtront ici en temps réel." icon="solar:inbox-bold-duotone" />
+                <Empty title={t('Aucune demande pour le moment')} description={t('Elles apparaîtront ici en temps réel.')} icon="solar:inbox-bold-duotone" />
               )}
               {(requests.data ?? []).map((r) => (
                 <ListItemButton
@@ -209,7 +211,7 @@ export function SellerDashboardView() {
                       {r.title}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                      {r.buyer.company_name || r.buyer.name} · {r.gouvernorat ?? '—'} · {fFromNow(r.created_at)}
+                      {r.buyer.company_name || r.buyer.name} · {t(r.gouvernorat) ?? '—'} · {fFromNow(r.created_at)}
                     </Typography>
                   </Box>
                   <Box sx={{ textAlign: 'right' }}>
@@ -226,17 +228,17 @@ export function SellerDashboardView() {
           <Stack spacing={3}>
             <Card>
               <CardHeader
-                title="Offres à venir"
+                title={t('Offres à venir')}
                 action={
                   <Button component={RouterLink} href={paths.seller.offers} size="small" endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}>
-                    Voir
+                    {t('Voir')}
                   </Button>
                 }
               />
               <Stack spacing={1.5} sx={{ p: 2.5 }}>
                 {(offers.data ?? []).length === 0 && (
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    Aucune offre programmée.
+                    {t('Aucune offre programmée.')}
                   </Typography>
                 )}
                 {(offers.data ?? []).map((offer) => (

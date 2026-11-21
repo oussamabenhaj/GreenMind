@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 
 import { DashboardLayout } from 'src/layouts/dashboard';
+import { useNavWithCounters } from 'src/layouts/nav-counters';
 import { adminNavData, buyerNavData, sellerNavData, collectorNavData } from 'src/layouts/nav-config-seller';
 
 import { LoadingScreen } from 'src/components/loading-screen';
@@ -121,17 +122,23 @@ const page = (title, label, Component) => (
   </>
 );
 
+/** Dashboard layout whose sidebar items show live counters (my products 20, 99+…). */
+function SpaceLayout({ nav, children }) {
+  const data = useNavWithCounters(nav);
+  return <DashboardLayout slotProps={{ nav: { data } }}>{children}</DashboardLayout>;
+}
+
 export const spaceRoutes = SPACES.map(({ role, label, nav, pages }) => ({
   path: role,
   element: (
     <AuthGuard>
-      <DashboardLayout slotProps={{ nav: { data: nav } }}>
+      <SpaceLayout nav={nav}>
         <RoleBasedGuard acceptRoles={[role]}>
           <Suspense fallback={<LoadingScreen />}>
             <Outlet />
           </Suspense>
         </RoleBasedGuard>
-      </DashboardLayout>
+      </SpaceLayout>
     </AuthGuard>
   ),
   children: [...pages, ...COMMON].map(([path, title, Component]) =>

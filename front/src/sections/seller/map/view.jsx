@@ -31,6 +31,7 @@ import { cleanParams } from 'src/hooks/use-api';
 import { fQty, fMoney, priceOf } from 'src/utils/clac';
 import { TUNISIA_CITIES, TUNISIA_CENTER } from 'src/utils/tunisia-cities';
 
+import { t } from 'src/locales/i18n';
 import axios, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -42,7 +43,6 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import { useReferenceData } from '../components/ui';
 import { openConversation } from '../components/contact';
-
 // ----------------------------------------------------------------------
 
 const LAYERS = {
@@ -122,8 +122,8 @@ function MapController({ target, full, onBounds }) {
     if (target) map.flyTo([target.lat, target.lng], target.zoom ?? map.getZoom(), { duration: 1.3 });
   }, [map, target]);
   useEffect(() => {
-    const t = setTimeout(() => map.invalidateSize(), 350);
-    return () => clearTimeout(t);
+    const tt = setTimeout(() => map.invalidateSize(), 350);
+    return () => clearTimeout(tt);
   }, [map, full]);
   return null;
 }
@@ -201,7 +201,7 @@ export function MapView() {
 
   // ---- data: actors (radius around the chosen place, else visible area) + products
   useEffect(() => {
-    const actorTypes = types.filter((t) => t !== 'product');
+    const actorTypes = types.filter((tt) => tt !== 'product');
     let params = null;
     if (center) params = { lat: center.lat, lng: center.lng, radius_km: radius };
     else if (bounds) {
@@ -210,7 +210,7 @@ export function MapView() {
       if (b[0] < b[2] && b[1] < b[3]) params = { bounds: b.join(',') };
     }
     const wantProducts = types.includes('product') && (center || q.trim().length >= 2 || categoryId || mode === 'product');
-    const t = setTimeout(async () => {
+    const tt = setTimeout(async () => {
       setLoading(true);
       try {
         const [a, p] = await Promise.all([
@@ -240,7 +240,7 @@ export function MapView() {
         setLoading(false);
       }
     }, 300);
-    return () => clearTimeout(t);
+    return () => clearTimeout(tt);
   }, [types, center, radius, bounds, q, categoryId, mode]);
 
   const all = useMemo(() => [...products, ...actors], [products, actors]);
@@ -274,7 +274,7 @@ export function MapView() {
     const pos = user?.lat != null ? { lat: user.lat, lng: user.lng } : { lat: 36.8065, lng: 10.1815 };
     setMe(pos);
     setCity(null);
-    setCenter({ ...pos, label: 'Mon adresse' });
+    setCenter({ ...pos, label: t('Mon adresse') });
     fly(pos.lat, pos.lng, zoomForRadius(radius));
   };
 
@@ -293,7 +293,7 @@ export function MapView() {
         const pos = { lat: coords.latitude, lng: coords.longitude };
         setMe(pos);
         setCity(null);
-        setCenter({ ...pos, label: 'Ma position' });
+        setCenter({ ...pos, label: t('Ma position') });
         fly(pos.lat, pos.lng, zoomForRadius(radius));
       },
       applyProfileLocation,
@@ -318,7 +318,7 @@ export function MapView() {
     [radius]
   );
 
-  const toggleType = (type) => setTypes((ts) => (ts.includes(type) ? ts.filter((t) => t !== type) : [...ts, type]));
+  const toggleType = (type) => setTypes((ts) => (ts.includes(type) ? ts.filter((tt) => tt !== type) : [...ts, type]));
 
   const ownerOf = (item) => (item.type === 'product' ? item.seller_id : item.type === 'collection_point' ? item.manager_id : item.id);
   const canContact = (item) => (item.type === 'product' ? 'seller' : ROLE_OF[item.type]) !== user?.role && ownerOf(item) !== user?.id;
@@ -332,7 +332,7 @@ export function MapView() {
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
         <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: LAYERS[item.type].color }} />
         <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-          {LAYERS[item.type].label}
+          {t(LAYERS[item.type].label)}
           {item.distance_km != null && ` · ${item.distance_km} km`}
         </Typography>
       </Stack>
@@ -342,11 +342,11 @@ export function MapView() {
       {item.type === 'product' ? (
         <>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            {item.seller?.company_name || item.seller?.name} · {item.gouvernorat}
+            {item.seller?.company_name || item.seller?.name} · {t(item.gouvernorat)}
           </Typography>
           <Stack direction="row" spacing={1} alignItems="baseline" sx={{ my: 1 }}>
             <Typography variant="h6" sx={{ color: 'primary.dark' }}>
-              {item.price_per_unit != null ? fMoney(price) : 'Sur devis'}
+              {item.price_per_unit != null ? fMoney(price) : t('Sur devis')}
             </Typography>
             {percent > 0 && <Label color="error">-{percent}%</Label>}
             {percent > 0 && (
@@ -357,22 +357,22 @@ export function MapView() {
           </Stack>
           {bestPercent > percent && (
             <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
-              jusqu’à {fMoney(best)}
+              {t('jusqu’à')} {fMoney(best)}
             </Typography>
           )}
           <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-            Disponible : {fQty(item.quantity_available, item.unit)}
+            {t('Disponible :')} {fQty(item.quantity_available, item.unit)}
           </Typography>
         </>
       ) : (
         <>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            {[item.address, item.gouvernorat].filter(Boolean).join(', ')}
+            {[item.address, t(item.gouvernorat)].filter(Boolean).join(', ')}
           </Typography>
           <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ my: 1 }}>
-            {item.is_verified && <Label color="info">Vérifié</Label>}
-            {item.type === 'collection_point' && <Label color={item.is_open_now ? 'success' : 'default'}>{item.is_open_now ? 'Ouvert' : 'Fermé'}</Label>}
-            {!!item.products_count && <Label color="primary">{item.products_count} produit(s)</Label>}
+            {item.is_verified && <Label color="info">{t('Vérifié')}</Label>}
+            {item.type === 'collection_point' && <Label color={item.is_open_now ? 'success' : 'default'}>{item.is_open_now ? t('Ouvert') : t('Fermé')}</Label>}
+            {!!item.products_count && <Label color="primary">{item.products_count} {t('produit(s)')}</Label>}
           </Stack>
           {item.phone && (
             <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
@@ -384,12 +384,12 @@ export function MapView() {
       <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 1.5 }}>
         {item.type === 'product' && (
           <Button size="small" variant="contained" onClick={() => router.push(sp.product(item.id))}>
-            Voir le produit
+            {t('Voir le produit')}
           </Button>
         )}
         {canContact(item) && (
           <Button size="small" variant="soft" onClick={() => contact(item)} startIcon={<Iconify icon="solar:chat-round-dots-bold" width={16} />}>
-            Contacter
+            {t('Contacter')}
           </Button>
         )}
         <Button
@@ -401,7 +401,7 @@ export function MapView() {
           rel="noopener"
           startIcon={<Iconify icon="solar:routing-2-bold" width={16} />}
         >
-          Itinéraire
+          {t('Itinéraire')}
         </Button>
       </Stack>
     </Box>
@@ -521,12 +521,12 @@ export function MapView() {
                   <Iconify icon="solar:map-point-search-bold-duotone" />
                 </Box>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="subtitle1">Explorer la carte</Typography>
+                  <Typography variant="subtitle1">{t('Explorer la carte')}</Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap component="div">
-                    {visible.length} résultat(s){center ? ` · ${radius} km autour de ${center.label}` : ' dans la zone visible'}
+                    {visible.length} {t('résultat(s)')}{center ? t(' · {{radius}} km autour de {{label}}', { radius, label: center.label }) : t(' dans la zone visible')}
                   </Typography>
                 </Box>
-                <Tooltip title="Masquer">
+                <Tooltip title={t('Masquer')}>
                   <IconButton size="small" onClick={() => setPanelOpen(false)}>
                     <Iconify icon="eva:arrow-ios-back-fill" />
                   </IconButton>
@@ -534,8 +534,8 @@ export function MapView() {
               </Stack>
 
               <Tabs value={mode} onChange={(_, v) => setMode(v)} variant="fullWidth" sx={{ px: 2 }}>
-                <Tab value="city" label="Par ville" icon={<Iconify icon="solar:city-bold" width={18} />} iconPosition="start" />
-                <Tab value="product" label="Par produit" icon={<Iconify icon="solar:box-bold" width={18} />} iconPosition="start" />
+                <Tab value="city" label={t('Par ville')} icon={<Iconify icon="solar:city-bold" width={18} />} iconPosition="start" />
+                <Tab value="product" label={t('Par produit')} icon={<Iconify icon="solar:box-bold" width={18} />} iconPosition="start" />
               </Tabs>
 
               <Stack spacing={1.5} sx={{ p: 2 }}>
@@ -544,7 +544,7 @@ export function MapView() {
                     autoFocus
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="Grignons, huile usagée, carton, PET…"
+                    placeholder={t('Grignons, huile usagée, carton, PET…')}
                     slotProps={{ input: { startAdornment: <InputAdornment position="start"><Iconify icon="eva:search-fill" /></InputAdornment> } }}
                   />
                 )}
@@ -558,7 +558,7 @@ export function MapView() {
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      placeholder={mode === 'city' ? 'Ville : Sfax, Djerba, Hammamet…' : 'Autour de… (optionnel)'}
+                      placeholder={mode === 'city' ? t('Ville : Sfax, Djerba, Hammamet…') : t('Autour de… (optionnel)')}
                       InputProps={{
                         ...params.InputProps,
                         startAdornment: (
@@ -571,14 +571,14 @@ export function MapView() {
                   )}
                 />
                 <Stack direction="row" spacing={1}>
-                  <TextField select fullWidth size="small" label="Matière" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                    <MenuItem value="">Toutes les matières</MenuItem>
+                  <TextField select fullWidth size="small" label={t('Matière')} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                    <MenuItem value="">{t('Toutes les matières')}</MenuItem>
                     {categories.map((c) => (
                       <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
                     ))}
                   </TextField>
                   <Button variant="soft" size="small" onClick={locate} startIcon={<Iconify icon="solar:gps-bold" width={18} />} sx={{ flexShrink: 0 }}>
-                    Près de moi
+                    {t('Près de moi')}
                   </Button>
                 </Stack>
 
@@ -587,9 +587,9 @@ export function MapView() {
                     <Box component={m.div} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} sx={{ overflow: 'hidden' }}>
                       <Stack direction="row" justifyContent="space-between" alignItems="center">
                         <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                          Rayon de recherche
+                          {t('Rayon de recherche')}
                         </Typography>
-                        <Label color="primary">{radius} km</Label>
+                        <Label color="primary">{radius} {t('km')}</Label>
                       </Stack>
                       <Slider
                         value={radius}
@@ -614,7 +614,7 @@ export function MapView() {
                         key={type}
                         size="small"
                         onClick={() => toggleType(type)}
-                        label={`${layer.glyph} ${layer.label} · ${counts[type] ?? 0}`}
+                        label={`${layer.glyph} ${t(layer.label)} · ${counts[type] ?? 0}`}
                         sx={{
                           fontWeight: 600,
                           border: `1px solid ${layer.color}`,
@@ -633,8 +633,8 @@ export function MapView() {
                   {list.length === 0 && (
                     <Typography variant="body2" sx={{ p: 2, color: 'text.secondary', textAlign: 'center' }}>
                       {mode === 'product' && q.length < 2 && !center && !categoryId
-                        ? 'Tapez un produit ou choisissez une ville.'
-                        : 'Aucun résultat — élargissez le rayon ou déplacez la carte.'}
+                        ? t('Tapez un produit ou choisissez une ville.')
+                        : t('Aucun résultat — élargissez le rayon ou déplacez la carte.')}
                     </Typography>
                   )}
                   {list.slice(0, 100).map((item) => {
@@ -651,13 +651,13 @@ export function MapView() {
                           </Typography>
                           <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap component="div">
                             {item.type === 'product'
-                              ? `${item.price_per_unit != null ? fMoney(item.final_price_per_unit) : 'Sur devis'} · ${item.seller?.company_name || item.seller?.name}`
-                              : `${layer.label} · ${item.gouvernorat}`}
+                              ? `${item.price_per_unit != null ? fMoney(item.final_price_per_unit) : t('Sur devis')} · ${item.seller?.company_name || item.seller?.name}`
+                              : `${t(layer.label)} · ${t(item.gouvernorat)}`}
                           </Typography>
                         </Box>
                         {item.distance_km != null && (
                           <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main', flexShrink: 0 }}>
-                            {item.distance_km} km
+                            {item.distance_km} {t('km')}
                           </Typography>
                         )}
                       </ListItemButton>
@@ -676,22 +676,22 @@ export function MapView() {
             startIcon={<Iconify icon="solar:map-point-search-bold" />}
             sx={{ position: 'absolute', zIndex: 1000, top: 16, left: 16, boxShadow: (theme) => theme.customShadows.z8 }}
           >
-            Rechercher
+            {t('Rechercher')}
           </Button>
         )}
 
         {/* ---------------- floating controls ---------------- */}
         <Stack spacing={1} sx={{ position: 'absolute', zIndex: 1000, top: 16, right: 16 }}>
-          <FloatButton title="Ma position" icon="solar:gps-bold-duotone" onClick={locate} />
-          <FloatButton title="Toute la Tunisie" icon="solar:global-bold-duotone" onClick={resetView} />
+          <FloatButton title={t('Ma position')} icon="solar:gps-bold-duotone" onClick={locate} />
+          <FloatButton title={t('Toute la Tunisie')} icon="solar:global-bold-duotone" onClick={resetView} />
           <FloatButton
-            title={`Fond de carte : ${BASEMAPS[base].label} (cliquer pour changer)`}
+            title={t('Fond de carte : {{label}} (cliquer pour changer)', { label: BASEMAPS[base].label })}
             icon={BASEMAPS[base].icon}
             onClick={() => setBase((b) => ({ plan: 'satellite', satellite: 'relief', relief: 'plan' })[b])}
           />
-          <FloatButton title="Zones de couverture des points" icon="solar:radar-2-bold-duotone" active={zones} onClick={() => setZones((z) => !z)} />
+          <FloatButton title={t('Zones de couverture des points')} icon="solar:radar-2-bold-duotone" active={zones} onClick={() => setZones((z) => !z)} />
           <FloatButton
-            title={full ? 'Quitter le plein écran' : 'Plein écran'}
+            title={full ? t('Quitter le plein écran') : t('Plein écran')}
             icon={full ? 'solar:quit-full-screen-square-bold' : 'solar:full-screen-square-bold'}
             active={full}
             onClick={() => setFull((f) => !f)}
@@ -711,11 +711,11 @@ export function MapView() {
               >
                 <Iconify icon="solar:map-point-wave-bold-duotone" sx={{ color: 'primary.main' }} />
                 <Typography variant="subtitle2">
-                  {center.label} · {radius} km
+                  {center.label} · {radius} {t('km')}
                 </Typography>
-                {allowed.map((t) => (
-                  <Typography key={t} variant="caption" sx={{ color: 'text.secondary' }}>
-                    {LAYERS[t].glyph} <b>{counts[t] ?? 0}</b>
+                {allowed.map((tt) => (
+                  <Typography key={tt} variant="caption" sx={{ color: 'text.secondary' }}>
+                    {LAYERS[tt].glyph} <b>{counts[tt] ?? 0}</b>
                   </Typography>
                 ))}
                 <IconButton size="small" onClick={() => chooseCity(null)}>
@@ -729,25 +729,25 @@ export function MapView() {
         {/* ---------------- legend ---------------- */}
         <GlassCard sx={{ position: 'absolute', zIndex: 1000, bottom: 24, right: 16, p: 1.5, display: { xs: 'none', sm: 'block' } }}>
           <Typography variant="overline" sx={{ color: 'text.disabled' }}>
-            Légende
+            {t('Légende')}
           </Typography>
           <Stack spacing={0.75} sx={{ mt: 0.5 }}>
-            {allowed.map((t) => (
-              <Stack key={t} direction="row" spacing={1} alignItems="center">
-                <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: LAYERS[t].color, border: '2px solid white', boxShadow: 1 }} />
-                <Typography variant="caption">{LAYERS[t].label}</Typography>
+            {allowed.map((tt) => (
+              <Stack key={tt} direction="row" spacing={1} alignItems="center">
+                <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: LAYERS[tt].color, border: '2px solid white', boxShadow: 1 }} />
+                <Typography variant="caption">{t(LAYERS[tt].label)}</Typography>
               </Stack>
             ))}
             {zones && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'rgba(45,168,216,0.2)', border: '1px solid #2DA8D8' }} />
-                <Typography variant="caption">Couverture (12 km)</Typography>
+                <Typography variant="caption">{t('Couverture (12 km)')}</Typography>
               </Stack>
             )}
             {center && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'rgba(139,211,90,0.25)', border: '2px dashed #2A7A23' }} />
-                <Typography variant="caption">Zone de recherche</Typography>
+                <Typography variant="caption">{t('Zone de recherche')}</Typography>
               </Stack>
             )}
           </Stack>

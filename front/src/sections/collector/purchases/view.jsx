@@ -1,20 +1,13 @@
 import { useRef, useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
-import Tab from '@mui/material/Tab';
 import Card from '@mui/material/Card';
-import Tabs from '@mui/material/Tabs';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
-import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
-import TableRow from '@mui/material/TableRow';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
@@ -31,25 +24,28 @@ import { useApi, cleanParams } from 'src/hooks/use-api';
 
 import { fNum, fMoney, fDateTime, PURCHASE_STATUS } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import { useSocketEvent } from 'src/lib/socket';
 import axios, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
+import { CellMain, DataTable } from 'src/components/clac/data-table';
+import { CountTabs, useTabCounts } from 'src/components/clac/count-tabs';
+import { useViewMode, ViewModeToggle } from 'src/components/clac/view-mode';
 
+import { PurchaseCard } from '../../seller/components/purchase-card';
 import { printDocument } from '../../seller/components/print-button';
-import { Empty, KpiCard, TierHint, PageHeader, StatusLabel, PagePagination } from '../../seller/components/ui';
-
+import { Empty, KpiCard, TierHint, PageHeader, StatusLabel, ListSkeleton, PagePagination } from '../../seller/components/ui';
 // ----------------------------------------------------------------------
 
 function useSearch(url, q) {
   const [options, setOptions] = useState([]);
   useEffect(() => {
-    const t = setTimeout(() => {
+    const tt = setTimeout(() => {
       axios.get(url, { params: cleanParams({ q, limit: 10 }) }).then((res) => setOptions(res.data.data)).catch(() => {});
     }, 250);
-    return () => clearTimeout(t);
+    return () => clearTimeout(tt);
   }, [url, q]);
   return options;
 }
@@ -163,12 +159,12 @@ function PurchaseDialog({ open, onClose, points, onSaved, initialProduct }) {
     <Dialog fullWidth maxWidth="sm" open={open} onClose={onClose}>
       <DialogTitle sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
         <Iconify icon="solar:cart-plus-bold-duotone" width={28} sx={{ color: 'primary.main' }} />
-        Nouvelle opération d’achat
+        {t('Nouvelle opération d’achat')}
       </DialogTitle>
       <DialogContent>
         {!!error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Stack spacing={2} sx={{ pt: 1 }}>
-          <TextField select label="Point de collecte" value={pointId} onChange={(e) => setPointId(e.target.value)}>
+          <TextField select label={t('Point de collecte')} value={pointId} onChange={(e) => setPointId(e.target.value)}>
             {(points ?? []).map((p) => (
               <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
             ))}
@@ -186,17 +182,17 @@ function PurchaseDialog({ open, onClose, points, onSaved, initialProduct }) {
                 <Box>
                   <Typography variant="subtitle2">{o.title}</Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                    {o.seller?.company_name || o.seller?.name} · {o.gouvernorat} · {fNum(o.quantity_available)} {o.unit} · {fMoney(o.final_price_per_unit)}
+                    {o.seller?.company_name || o.seller?.name} · {t(o.gouvernorat)} · {fNum(o.quantity_available)} {o.unit} · {fMoney(o.final_price_per_unit)}
                   </Typography>
                 </Box>
               </li>
             )}
-            renderInput={(params) => <TextField {...params} label="Produit d’un vendeur (recommandé)" placeholder="Rechercher sur le marché…" />}
+            renderInput={(params) => <TextField {...params} label={t('Produit d’un vendeur (recommandé)')} placeholder={t('Rechercher sur le marché…')} />}
           />
           {!product && (
             <>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>— ou saisie libre (vendeur non inscrit, apport en direct) —</Typography>
-              <TextField label="Matière" value={f.label} onChange={(e) => setF((s) => ({ ...s, label: e.target.value }))} placeholder="Ex : Cartons mélangés" />
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('— ou saisie libre (vendeur non inscrit, apport en direct) —')}</Typography>
+              <TextField label={t('Matière')} value={f.label} onChange={(e) => setF((s) => ({ ...s, label: e.target.value }))} placeholder={t('Ex : Cartons mélangés')} />
               <Autocomplete
                 options={sellers}
                 value={seller}
@@ -205,27 +201,27 @@ function PurchaseDialog({ open, onClose, points, onSaved, initialProduct }) {
                 filterOptions={(x) => x}
                 getOptionLabel={(o) => o.company_name || o.name}
                 isOptionEqualToValue={(a, b) => a.id === b.id}
-                renderInput={(params) => <TextField {...params} label="Vendeur inscrit (optionnel)" />}
+                renderInput={(params) => <TextField {...params} label={t('Vendeur inscrit (optionnel)')} />}
               />
             </>
           )}
           <Stack direction="row" spacing={2}>
-            <TextField fullWidth label="Quantité" type="number" value={f.quantity_kg} onChange={(e) => setF((s) => ({ ...s, quantity_kg: e.target.value }))} slotProps={{ input: { endAdornment: <InputAdornment position="end">kg</InputAdornment> } }} />
-            <TextField fullWidth label="Prix" type="number" value={f.unit_price} onChange={(e) => setF((s) => ({ ...s, unit_price: e.target.value }))} slotProps={{ input: { endAdornment: <InputAdornment position="end">TND/kg</InputAdornment> } }} />
+            <TextField fullWidth label={t('Quantité')} type="number" value={f.quantity_kg} onChange={(e) => setF((s) => ({ ...s, quantity_kg: e.target.value }))} slotProps={{ input: { endAdornment: <InputAdornment position="end">{t('kg')}</InputAdornment> } }} />
+            <TextField fullWidth label={t('Prix')} type="number" value={f.unit_price} onChange={(e) => setF((s) => ({ ...s, unit_price: e.target.value }))} slotProps={{ input: { endAdornment: <InputAdornment position="end">{t('TND/kg')}</InputAdornment> } }} />
           </Stack>
           <TierHint product={pricing} quantity={f.quantity_kg} unit="kg" displayUnit="kg" />
-          <TextField label="Enlèvement prévu" type="datetime-local" value={f.scheduled_at} onChange={(e) => setF((s) => ({ ...s, scheduled_at: e.target.value }))} slotProps={{ inputLabel: { shrink: true } }} />
-          <TextField label="Notes" multiline rows={2} value={f.notes} onChange={(e) => setF((s) => ({ ...s, notes: e.target.value }))} />
+          <TextField label={t('Enlèvement prévu')} type="datetime-local" value={f.scheduled_at} onChange={(e) => setF((s) => ({ ...s, scheduled_at: e.target.value }))} slotProps={{ inputLabel: { shrink: true } }} />
+          <TextField label={t('Notes')} multiline rows={2} value={f.notes} onChange={(e) => setF((s) => ({ ...s, notes: e.target.value }))} />
           <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: 'primary.lighter', color: 'primary.darker' }}>
-            <Typography variant="subtitle2">Montant estimé</Typography>
+            <Typography variant="subtitle2">{t('Montant estimé')}</Typography>
             <Typography variant="h5">{fMoney(total)}</Typography>
           </Box>
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Annuler</Button>
+        <Button variant="outlined" color="inherit" onClick={onClose}>{t('Annuler')}</Button>
         <LoadingButton variant="contained" loading={saving} onClick={save} disabled={!pointId || !f.quantity_kg || (!product && !f.label)}>
-          Créer l’opération
+          {t('Créer l’opération')}
         </LoadingButton>
       </DialogActions>
     </Dialog>
@@ -253,6 +249,13 @@ export function CollectorPurchasesView() {
   const { data: points } = useApi(`${endpoints.collectionPoints}/mine`, { limit: 50 });
   const { data, meta, loading, reload } = useApi(endpoints.purchases.list, cleanParams({ status, page, limit: 15 }));
   const overview = useApi(endpoints.reports.overview);
+  const [view, setView] = useViewMode('collector-purchases', 'table');
+  const counts = useTabCounts(
+    endpoints.purchases.list,
+    [{ value: '', params: {} }, ...Object.keys(PURCHASE_STATUS).map((v) => ({ value: v, params: { status: v } }))],
+    {},
+    `${overview.data?.purchases?.pending}-${overview.data?.purchases?.confirmed}-${meta?.total}`
+  );
   useSocketEvent('purchase:updated', () => { reload(); overview.reload(); });
 
   const change = async (row, next) => {
@@ -269,89 +272,83 @@ export function CollectorPurchasesView() {
 
   const pu = overview.data?.purchases;
 
+  const renderActions = (row) => (
+      <Stack direction="row" spacing={1} justifyContent="flex-end">
+        {row.status === 'pending' && (
+          <Button size="small" variant="soft" disabled={busy === row.id} onClick={() => change(row, 'confirmed')}>{t('Confirmer')}</Button>
+        )}
+        {row.status === 'confirmed' && (
+          <Button size="small" variant="contained" color="success" disabled={busy === row.id} onClick={() => change(row, 'received')} startIcon={<Iconify icon="solar:import-bold" />}>
+            {t('Réceptionner')}
+          </Button>
+        )}
+        {['pending', 'confirmed'].includes(row.status) && (
+          <Button size="small" variant="soft" color="error" disabled={busy === row.id} onClick={() => change(row, 'cancelled')}>{t('Annuler')}</Button>
+        )}
+        <Tooltip title={t('Bon d’achat')}>
+          <IconButton onClick={() => printDocument('purchases', row.id)}><Iconify icon="solar:printer-minimalistic-bold" /></IconButton>
+        </Tooltip>
+      </Stack>
+  );
+
   return (
     <DashboardContent maxWidth="xl">
       <PageHeader
         icon="solar:cart-large-4-bold-duotone"
-        title="Opérations d’achat"
-        subtitle="Achetez aux vendeurs : la réception alimente automatiquement votre stock"
+        title={t('Opérations d’achat')}
+        subtitle={t('Achetez aux vendeurs : la réception alimente automatiquement votre stock')}
         action={
           <Button variant="contained" size="large" startIcon={<Iconify icon="mingcute:add-line" />} onClick={() => setCreate(true)} disabled={!points?.length}>
-            Nouvel achat
+            {t('Nouvel achat')}
           </Button>
         }
       />
       <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, mb: 3 }}>
-        <KpiCard title="En attente" value={pu?.pending ?? 0} icon="solar:hourglass-bold-duotone" color="warning" />
-        <KpiCard title="Confirmés" value={pu?.confirmed ?? 0} icon="solar:check-circle-bold-duotone" color="info" delay={0.05} />
-        <KpiCard title="Réceptionné (12 mois)" value={`${fNum(pu?.received_kg ?? 0)} kg`} icon="solar:box-bold-duotone" delay={0.1} />
-        <KpiCard title="Dépensé (12 mois)" value={fMoney(pu?.spent ?? 0)} icon="solar:wallet-money-bold-duotone" color="secondary" delay={0.15} />
+        <KpiCard title={t('En attente')} value={pu?.pending ?? 0} icon="solar:hourglass-bold-duotone" color="warning" />
+        <KpiCard title={t('Confirmés')} value={pu?.confirmed ?? 0} icon="solar:check-circle-bold-duotone" color="info" delay={0.05} />
+        <KpiCard title={t('Réceptionné (12 mois)')} value={`${fNum(pu?.received_kg ?? 0)} ${t('kg')}`} icon="solar:box-bold-duotone" delay={0.1} />
+        <KpiCard title={t('Dépensé (12 mois)')} value={fMoney(pu?.spent ?? 0)} icon="solar:wallet-money-bold-duotone" color="secondary" delay={0.15} />
       </Box>
 
-      <Card>
-        <Tabs value={status} onChange={(_, v) => { setStatus(v); setPage(1); }} sx={{ px: 2.5, boxShadow: (theme) => `inset 0 -2px 0 0 ${theme.vars.palette.divider}` }}>
-          <Tab value="" label="Toutes" />
-          {Object.entries(PURCHASE_STATUS).map(([value, s]) => (
-            <Tab key={value} value={value} label={s.label} />
-          ))}
-        </Tabs>
-        {!loading && !data?.length ? (
-          <Box sx={{ p: 3 }}>
-            <Empty title="Aucune opération" description="Créez un achat depuis un produit du marché ou en saisie libre." icon="solar:cart-large-minimalistic-bold-duotone" />
-          </Box>
-        ) : (
-          <Scrollbar>
-            <Table sx={{ minWidth: 960 }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Matière</TableCell>
-                  <TableCell>Vendeur</TableCell>
-                  <TableCell>Point</TableCell>
-                  <TableCell align="right">Quantité</TableCell>
-                  <TableCell align="right">Montant</TableCell>
-                  <TableCell>Enlèvement</TableCell>
-                  <TableCell>Statut</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {(data ?? []).map((row) => (
-                  <TableRow key={row.id} hover>
-                    <TableCell>
-                      <Typography variant="subtitle2">{row.label}</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>{row.category_name ?? '—'}</Typography>
-                    </TableCell>
-                    <TableCell>{row.seller ? row.seller.company_name || row.seller.name : <i>Non inscrit</i>}</TableCell>
-                    <TableCell>{row.collection_point.name}</TableCell>
-                    <TableCell align="right">{fNum(row.quantity_kg)} kg</TableCell>
-                    <TableCell align="right"><b>{fMoney(row.total_amount)}</b></TableCell>
-                    <TableCell>{fDateTime(row.received_at ?? row.scheduled_at)}</TableCell>
-                    <TableCell><StatusLabel map={PURCHASE_STATUS} value={row.status} /></TableCell>
-                    <TableCell align="right">
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        {row.status === 'pending' && (
-                          <Button size="small" variant="soft" disabled={busy === row.id} onClick={() => change(row, 'confirmed')}>Confirmer</Button>
-                        )}
-                        {row.status === 'confirmed' && (
-                          <Button size="small" variant="contained" color="success" disabled={busy === row.id} onClick={() => change(row, 'received')} startIcon={<Iconify icon="solar:import-bold" />}>
-                            Réceptionner
-                          </Button>
-                        )}
-                        {['pending', 'confirmed'].includes(row.status) && (
-                          <Button size="small" variant="soft" color="error" disabled={busy === row.id} onClick={() => change(row, 'cancelled')}>Annuler</Button>
-                        )}
-                        <Tooltip title="Bon d’achat">
-                          <IconButton onClick={() => printDocument('purchases', row.id)}><Iconify icon="solar:printer-minimalistic-bold" /></IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Scrollbar>
-        )}
+      <Card sx={{ mb: 3, px: 2.5, display: 'flex', alignItems: 'center' }}>
+        <CountTabs
+          value={status}
+          onChange={(v) => {
+            setStatus(v);
+            setPage(1);
+          }}
+          counts={counts}
+          sx={{ flex: 1 }}
+          tabs={[{ value: '', label: t('Toutes'), color: 'default' }, ...Object.entries(PURCHASE_STATUS).map(([value, st]) => ({ value, label: st.label, color: st.color }))]}
+        />
+        <ViewModeToggle value={view} onChange={setView} />
       </Card>
+      {loading && !data ? (
+        <ListSkeleton height={260} />
+      ) : !data?.length ? (
+        <Empty title={t('Aucune opération')} description={t('Créez un achat depuis un produit du marché ou en saisie libre.')} icon="solar:cart-large-minimalistic-bold-duotone" />
+      ) : view === 'table' ? (
+        <DataTable
+          rows={data}
+          minWidth={960}
+          columns={[
+            { label: t('Matière'), render: (row) => <CellMain icon={<Iconify icon="solar:cart-large-4-bold-duotone" />} title={row.label} subtitle={row.category_name ?? '—'} /> },
+            { label: t('Vendeur'), render: (row) => (row.seller ? row.seller.company_name || row.seller.name : <i>{t('Non inscrit')}</i>) },
+            { label: t('Point'), render: (row) => row.collection_point.name },
+            { label: t('Quantité'), align: 'right', nowrap: true, render: (row) => `${fNum(row.quantity_kg)} ${t('kg')}` },
+            { label: t('Montant'), align: 'right', nowrap: true, render: (row) => <b>{fMoney(row.total_amount)}</b> },
+            { label: t('Enlèvement'), nowrap: true, render: (row) => fDateTime(row.received_at ?? row.scheduled_at) },
+            { label: t('Statut'), render: (row) => <StatusLabel map={PURCHASE_STATUS} value={row.status} /> },
+            { label: t('Actions'), align: 'right', render: renderActions },
+          ]}
+        />
+      ) : (
+        <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', xl: 'repeat(3, 1fr)' } }}>
+          {data.map((row, i) => (
+            <PurchaseCard key={row.id} row={row} party="collector" delay={Math.min(i, 10) * 0.03} actions={renderActions(row)} />
+          ))}
+        </Box>
+      )}
       <PagePagination meta={meta} onChange={setPage} />
       <PurchaseDialog open={create} points={points} initialProduct={initialProduct} onClose={() => { setCreate(false); setInitialProduct(null); }} onSaved={() => { reload(); overview.reload(); }} />
     </DashboardContent>

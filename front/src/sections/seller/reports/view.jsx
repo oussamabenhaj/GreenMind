@@ -21,6 +21,7 @@ import { useApi } from 'src/hooks/use-api';
 
 import { fNum, fQty, fMoney } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -37,27 +38,27 @@ export function ReportsView() {
   const { data: timeline } = useApi(endpoints.reports.timeline, { months });
 
   const label = (ym) => dayjs(`${ym}-01`).format(months > 12 ? 'MMM YY' : 'MMM');
-  const revenue = (timeline ?? []).map((t) => ({ label: label(t.month), value: t.amount }));
-  const volume = (timeline ?? []).map((t) => ({ label: label(t.month), value: t.quantity_kg }));
+  const revenue = (timeline ?? []).map((tt) => ({ label: label(tt.month), value: tt.amount }));
+  const volume = (timeline ?? []).map((tt) => ({ label: label(tt.month), value: tt.quantity_kg }));
   const maxCat = Math.max(1, ...(o?.sales_by_category ?? []).map((c) => c.revenue));
 
   return (
     <DashboardContent maxWidth="xl">
       <PageHeader
         icon="solar:chart-2-bold-duotone"
-        title="Rapports & statistiques"
-        subtitle="Suivez vos performances commerciales"
+        title={t('Rapports & statistiques')}
+        subtitle={t('Suivez vos performances commerciales')}
         action={
           <Stack direction="row" spacing={1.5}>
             <ToggleButtonGroup exclusive size="small" value={months} onChange={(_, v) => v && setMonths(v)}>
               {[3, 6, 12, 24].map((mo) => (
                 <ToggleButton key={mo} value={mo} sx={{ px: 2 }}>
-                  {mo} mois
+                  {mo} {t('mois')}
                 </ToggleButton>
               ))}
             </ToggleButtonGroup>
             <Button variant="outlined" color="inherit" startIcon={<Iconify icon="solar:printer-minimalistic-bold" />} onClick={() => window.print()}>
-              Imprimer
+              {t('Imprimer')}
             </Button>
           </Stack>
         }
@@ -65,9 +66,9 @@ export function ReportsView() {
 
       <Grid container spacing={3}>
         {[
-          ['Revenus', fMoney(o?.sales.revenue), 'solar:wallet-money-bold-duotone', 'primary'],
-          ['Quantité vendue', `${fNum(o?.sales.sold_kg)} kg`, 'solar:box-bold-duotone', 'secondary'],
-          ['Ventes réceptionnées', `${o?.sales.purchases_received ?? 0} / ${o?.sales.purchases_total ?? 0}`, 'solar:delivery-bold-duotone', 'info'],
+          [t('Revenus'), fMoney(o?.sales.revenue), 'solar:wallet-money-bold-duotone', 'primary'],
+          [t('Quantité vendue'), `${fNum(o?.sales.sold_kg)} kg`, 'solar:box-bold-duotone', 'secondary'],
+          [t('Ventes réceptionnées'), `${o?.sales.purchases_received ?? 0} / ${o?.sales.purchases_total ?? 0}`, 'solar:delivery-bold-duotone', 'info'],
         ].map(([title, value, icon, color], i) => (
           <Grid key={title} size={{ xs: 12, sm: 6, lg: 3 }}>
             <KpiCard title={title} value={value} icon={icon} color={color} loading={loading} delay={i * 0.05} />
@@ -76,7 +77,7 @@ export function ReportsView() {
 
         <Grid size={{ xs: 12, lg: 6 }}>
           <Card>
-            <CardHeader title="Revenus (TND)" subheader="Par mois" />
+            <CardHeader title={t('Revenus (TND)')} subheader={t('Par mois')} />
             <Box sx={{ p: 3 }}>
               <EcoChart series={revenue} type="bar" format={fNum} />
             </Box>
@@ -84,7 +85,7 @@ export function ReportsView() {
         </Grid>
         <Grid size={{ xs: 12, lg: 6 }}>
           <Card>
-            <CardHeader title="Volume vendu (kg)" subheader="Par mois" />
+            <CardHeader title={t('Volume vendu (kg)')} subheader={t('Par mois')} />
             <Box sx={{ p: 3 }}>
               <EcoChart series={volume} color="info" format={fNum} />
             </Box>
@@ -93,19 +94,19 @@ export function ReportsView() {
 
         <Grid size={{ xs: 12 }}>
           <Card sx={{ height: 1 }}>
-            <CardHeader title="Ventes par catégorie" />
+            <CardHeader title={t('Ventes par catégorie')} />
             <Stack spacing={2.5} sx={{ p: 3 }}>
               {(o?.sales_by_category ?? []).length === 0 && (
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  Pas encore de ventes réceptionnées sur la période.
+                  {t('Pas encore de ventes réceptionnées sur la période.')}
                 </Typography>
               )}
               {(o?.sales_by_category ?? []).map((c) => (
                 <Box key={c.category_id ?? 'none'}>
                   <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.75 }}>
-                    <Typography variant="subtitle2">{c.category_name ?? 'Non classé'}</Typography>
+                    <Typography variant="subtitle2">{c.category_name ?? t('Non classé')}</Typography>
                     <Typography variant="body2">
-                      {fMoney(c.revenue)} · {fNum(c.sold_kg)} kg
+                      {fMoney(c.revenue)} · {fNum(c.sold_kg)} {t('kg')}
                     </Typography>
                   </Stack>
                   <LinearProgress variant="determinate" value={(c.revenue / maxCat) * 100} sx={{ height: 8, borderRadius: 4 }} />
@@ -117,14 +118,14 @@ export function ReportsView() {
 
         <Grid size={12}>
           <Card>
-            <CardHeader title="Produits les plus consultés" />
+            <CardHeader title={t('Produits les plus consultés')} />
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>#</TableCell>
-                  <TableCell>Produit</TableCell>
-                  <TableCell align="right">Vues</TableCell>
-                  <TableCell align="right">Stock</TableCell>
+                  <TableCell>{t('Produit')}</TableCell>
+                  <TableCell align="right">{t('Vues')}</TableCell>
+                  <TableCell align="right">{t('Stock')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

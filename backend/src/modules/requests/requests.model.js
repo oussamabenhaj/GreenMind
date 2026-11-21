@@ -3,7 +3,7 @@ import { QueryBuilder } from '../../utils/queryBuilder.js';
 
 const FIELDS = `r.id, r.buyer_id, r.category_id, r.market_id, r.product_id, r.target_user_id, r.title, r.description,
   r.quantity, r.unit, r.max_price_per_unit, r.quantity_discount, r.gouvernorat, r.lat, r.lng, r.needed_by, r.status,
-  r.created_at, r.updated_at`;
+  r.created_at, r.updated_at, r.i18n`;
 
 const select = (distance = 'NULL::numeric', viewerParam = 'NULL::uuid') => `
   SELECT ${FIELDS},
@@ -27,7 +27,7 @@ function applyFilters(qb, f) {
   qb.whereIf(f.product_id, (p) => `r.product_id = ${p}`);
   qb.whereIf(f.gouvernorat, (p) => `r.gouvernorat = ${p}`);
   qb.whereIf(f.min_quantity, (p) => `r.quantity >= ${p}`);
-  qb.whereIf(f.q && `%${f.q}%`, (p) => `(r.title ILIKE ${p} OR r.description ILIKE ${p})`);
+  qb.whereIf(f.q && `%${f.q}%`, (p) => `(r.title ILIKE ${p} OR r.description ILIKE ${p} OR r.i18n::text ILIKE ${p})`);
 }
 
 async function run(qb, f, page, viewerId) {

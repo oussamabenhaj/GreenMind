@@ -2,9 +2,7 @@ import { useState } from 'react';
 import { m } from 'framer-motion';
 
 import Box from '@mui/material/Box';
-import Tab from '@mui/material/Tab';
 import Card from '@mui/material/Card';
-import Tabs from '@mui/material/Tabs';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Drawer from '@mui/material/Drawer';
@@ -18,6 +16,7 @@ import { useApi, cleanParams } from 'src/hooks/use-api';
 
 import { fQty, fDate, fMoney, fFromNow, REQUEST_STATUS } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import { useSocketEvent } from 'src/lib/socket';
 import axios, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -25,11 +24,13 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { CellMain, DataTable } from 'src/components/clac/data-table';
+import { CountTabs, useTabCounts } from 'src/components/clac/count-tabs';
+import { useViewMode, ViewModeToggle } from 'src/components/clac/view-mode';
 
 import { RequestFormDialog } from './request-form-dialog';
 import { printDocument } from '../../seller/components/print-button';
 import { Empty, PageHeader, StatusLabel, ListSkeleton, PagePagination } from '../../seller/components/ui';
-
 // ----------------------------------------------------------------------
 
 function RequestDrawer({ id, onClose, onChanged }) {
@@ -54,7 +55,7 @@ function RequestDrawer({ id, onClose, onChanged }) {
         <>
           <Stack direction="row" alignItems="center" sx={{ p: 2.5 }}>
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              Ma demande
+              {t('Ma demande')}
             </Typography>
             <IconButton onClick={() => printDocument('requests', r.id)}>
               <Iconify icon="solar:printer-minimalistic-bold" />
@@ -69,7 +70,7 @@ function RequestDrawer({ id, onClose, onChanged }) {
               <Stack direction="row" spacing={1}>
                 <StatusLabel map={REQUEST_STATUS} value={r.status} />
                 {r.category_name && <Label color="primary">{r.category_name}</Label>}
-                {r.product_title && <Label color="info">Produit ciblé</Label>}
+                {r.product_title && <Label color="info">{t('Produit ciblé')}</Label>}
               </Stack>
               <Typography variant="h5">{r.title}</Typography>
               {r.description && (
@@ -79,9 +80,9 @@ function RequestDrawer({ id, onClose, onChanged }) {
               )}
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, p: 2, borderRadius: 1.5, bgcolor: 'background.neutral' }}>
                 {[
-                  ['Quantité', fQty(r.quantity, r.unit)],
-                  ['Prix max', fMoney(r.max_price_per_unit)],
-                  ['Pour le', fDate(r.needed_by)],
+                  [t('Quantité'), fQty(r.quantity, r.unit)],
+                  [t('Prix max'), fMoney(r.max_price_per_unit)],
+                  [t('Pour le'), fDate(r.needed_by)],
                 ].map(([label, value]) => (
                   <Box key={label}>
                     <Typography variant="caption" sx={{ color: 'text.disabled' }}>
@@ -94,7 +95,7 @@ function RequestDrawer({ id, onClose, onChanged }) {
 
               {r.quantity_discount && (
                 <Label color="success" startIcon={<Iconify icon="solar:tag-price-bold" width={14} />}>
-                  Remise quantité appliquée
+                  {t('Remise quantité appliquée')}
                 </Label>
               )}
 
@@ -102,22 +103,22 @@ function RequestDrawer({ id, onClose, onChanged }) {
                 {open && (
                   <>
                     <Button size="small" variant="soft" startIcon={<Iconify icon="solar:pen-bold" />} onClick={() => setEdit(true)}>
-                      Modifier
+                      {t('Modifier')}
                     </Button>
                     <Button size="small" variant="soft" color="success" onClick={() => setStatus('fulfilled')}>
-                      Marquer satisfaite
+                      {t('Marquer satisfaite')}
                     </Button>
                     <Button size="small" variant="soft" color="inherit" onClick={() => setStatus('closed')}>
-                      Clôturer
+                      {t('Clôturer')}
                     </Button>
                     <Button size="small" variant="soft" color="error" onClick={() => setStatus('cancelled')}>
-                      Annuler
+                      {t('Annuler')}
                     </Button>
                   </>
                 )}
                 {!open && (
                   <Button size="small" variant="soft" onClick={() => setStatus('open')} startIcon={<Iconify icon="solar:restart-bold" />}>
-                    Rouvrir
+                    {t('Rouvrir')}
                   </Button>
                 )}
               </Stack>
@@ -140,7 +141,19 @@ export function BuyerRequestsView() {
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [create, setCreate] = useState(false);
-  const { data, meta, loading, reload } = useApi(`${endpoints.requests.list}/mine`, cleanParams({ status, page, limit: 12 }));
+  const { data, meta, loading, reload: reloadList } = useApi(`${endpoints.requests.list}/mine`, cleanParams({ status, page, limit: 12 }));
+  const [view, setView] = useViewMode('buyer-requests');
+  const [version, setVersion] = useState(0);
+  const reload = () => {
+    reloadList();
+    setVersion((v) => v + 1);
+  };
+  const counts = useTabCounts(
+    `${endpoints.requests.list}/mine`,
+    [{ value: '', params: {} }, ...Object.keys(REQUEST_STATUS).map((v) => ({ value: v, params: { status: v } }))],
+    {},
+    version
+  );
 
   useSocketEvent('notification:new', (n) => n.type?.startsWith('request.') && reload());
 
@@ -148,23 +161,44 @@ export function BuyerRequestsView() {
     <DashboardContent maxWidth="xl">
       <PageHeader
         icon="solar:inbox-out-bold-duotone"
-        title="Mes demandes"
-        subtitle="Exprimez vos besoins : les vendeurs intéressés vous contactent directement"
+        title={t('Mes demandes')}
+        subtitle={t('Exprimez vos besoins : les vendeurs intéressés vous contactent directement')}
         action={
           <Button variant="contained" size="large" startIcon={<Iconify icon="mingcute:add-line" />} onClick={() => setCreate(true)}>
-            Nouvelle demande
+            {t('Nouvelle demande')}
           </Button>
         }
       />
-      <Tabs value={status} onChange={(_, v) => { setStatus(v); setPage(1); }} sx={{ mb: 3 }}>
-        <Tab value="" label="Toutes" />
-        {Object.entries(REQUEST_STATUS).map(([value, meta_]) => (
-          <Tab key={value} value={value} label={meta_.label} />
-        ))}
-      </Tabs>
+      <Card sx={{ mb: 3, px: 2.5, display: 'flex', alignItems: 'center' }}>
+        <CountTabs
+          value={status}
+          onChange={(v) => {
+            setStatus(v);
+            setPage(1);
+          }}
+          counts={counts}
+          sx={{ flex: 1 }}
+          tabs={[{ value: '', label: t('Toutes'), color: 'default' }, ...Object.entries(REQUEST_STATUS).map(([value, st]) => ({ value, label: st.label, color: st.color }))]}
+        />
+        <ViewModeToggle value={view} onChange={setView} />
+      </Card>
 
       {loading && !data ? (
         <ListSkeleton height={200} />
+      ) : data?.length && view === 'table' ? (
+        <DataTable
+          rows={data}
+          onRowClick={(r) => router.push(`?r=${r.id}`)}
+          columns={[
+            { label: t('Demande'), render: (r) => <CellMain icon={<Iconify icon="solar:inbox-out-bold-duotone" />} title={r.title} subtitle={r.category_name ?? '—'} /> },
+            { label: t('Quantité'), align: 'right', nowrap: true, render: (r) => <b>{fQty(r.quantity, r.unit)}</b> },
+            { label: t('Prix max'), align: 'right', nowrap: true, render: (r) => fMoney(r.max_price_per_unit) },
+            { label: t('Pour le'), nowrap: true, render: (r) => fDate(r.needed_by) },
+            { label: t('Statut'), render: (r) => <StatusLabel map={REQUEST_STATUS} value={r.status} /> },
+            { label: t('Propositions'), align: 'right', render: (r) => <Label color={r.responses_count ? 'primary' : 'default'}>{r.responses_count}</Label> },
+            { label: t('Publiée'), nowrap: true, render: (r) => fFromNow(r.created_at) },
+          ]}
+        />
       ) : data?.length ? (
         <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', xl: 'repeat(3, 1fr)' } }}>
           {data.map((r, i) => (
@@ -185,20 +219,20 @@ export function BuyerRequestsView() {
               </Stack>
               <Typography variant="subtitle1">{r.title}</Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-                {r.category_name ?? '—'} · {fQty(r.quantity, r.unit)} · {r.gouvernorat ?? '—'}
+                {r.category_name ?? '—'} · {fQty(r.quantity, r.unit)} · {t(r.gouvernorat) ?? '—'}
               </Typography>
               {r.quantity_discount && (
-                <Label color="success" sx={{ mt: 1 }}>Remise quantité appliquée</Label>
+                <Label color="success" sx={{ mt: 1 }}>{t('Remise quantité appliquée')}</Label>
               )}
             </Card>
           ))}
         </Box>
       ) : (
         <Empty
-          title="Aucune demande"
-          description="Publiez votre premier besoin : quantité, prix et délai. Les vendeurs vous contactent."
+          title={t('Aucune demande')}
+          description={t('Publiez votre premier besoin : quantité, prix et délai. Les vendeurs vous contactent.')}
           icon="solar:inbox-out-bold-duotone"
-          action={<Button variant="contained" onClick={() => setCreate(true)}>Créer une demande</Button>}
+          action={<Button variant="contained" onClick={() => setCreate(true)}>{t('Créer une demande')}</Button>}
         />
       )}
       <PagePagination meta={meta} onChange={setPage} />

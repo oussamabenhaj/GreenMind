@@ -31,6 +31,7 @@ import { useApi } from 'src/hooks/use-api';
 
 import { fNum, fDateTime } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import { useSocketEvent } from 'src/lib/socket';
 import axios, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -38,10 +39,10 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { TranslationNotice } from 'src/components/clac/translation-notice';
 
 import { printDocument } from '../../seller/components/print-button';
 import { Ring, Empty, KpiCard, PageHeader, useReferenceData } from '../../seller/components/ui';
-
 // ----------------------------------------------------------------------
 
 const MOVE = {
@@ -73,24 +74,25 @@ function ItemDialog({ open, onClose, pointId, item, onSaved }) {
   };
   return (
     <Dialog fullWidth maxWidth="xs" open={open} onClose={onClose}>
-      <DialogTitle>{item ? 'Modifier l’article' : 'Nouvel article en stock'}</DialogTitle>
+      <DialogTitle>{item ? t('Modifier l’article') : t('Nouvel article en stock')}</DialogTitle>
       <DialogContent>
+        <TranslationNotice item={item} fields={['label']} />
         {!!error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Stack spacing={2} sx={{ pt: 1 }}>
-          <TextField label="Libellé" value={f.label ?? ''} onChange={(e) => setF((s) => ({ ...s, label: e.target.value }))} />
-          <TextField select label="Catégorie" value={f.category_id ?? ''} onChange={(e) => setF((s) => ({ ...s, category_id: e.target.value }))}>
+          <TextField label={t('Libellé')} value={f.label ?? ''} onChange={(e) => setF((s) => ({ ...s, label: e.target.value }))} />
+          <TextField select label={t('Catégorie')} value={f.category_id ?? ''} onChange={(e) => setF((s) => ({ ...s, category_id: e.target.value }))}>
             <MenuItem value="">—</MenuItem>
             {categories.map((c) => (
               <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
             ))}
           </TextField>
-          <TextField label="Seuil d’alerte (kg)" type="number" value={f.min_threshold_kg ?? ''} onChange={(e) => setF((s) => ({ ...s, min_threshold_kg: e.target.value }))} />
-          {!item && <TextField label="Quantité initiale (kg)" type="number" value={f.initial_quantity_kg ?? ''} onChange={(e) => setF((s) => ({ ...s, initial_quantity_kg: e.target.value }))} />}
+          <TextField label={t('Seuil d’alerte (kg)')} type="number" value={f.min_threshold_kg ?? ''} onChange={(e) => setF((s) => ({ ...s, min_threshold_kg: e.target.value }))} />
+          {!item && <TextField label={t('Quantité initiale (kg)')} type="number" value={f.initial_quantity_kg ?? ''} onChange={(e) => setF((s) => ({ ...s, initial_quantity_kg: e.target.value }))} />}
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Annuler</Button>
-        <Button variant="contained" onClick={save} disabled={!f.label}>Enregistrer</Button>
+        <Button variant="outlined" color="inherit" onClick={onClose}>{t('Annuler')}</Button>
+        <Button variant="contained" onClick={save} disabled={!f.label}>{t('Enregistrer')}</Button>
       </DialogActions>
     </Dialog>
   );
@@ -124,25 +126,25 @@ function MovementDialog({ open, onClose, pointId, item, onSaved }) {
   };
   return (
     <Dialog fullWidth maxWidth="xs" open={open} onClose={onClose}>
-      <DialogTitle>Mouvement de stock — {item?.label}</DialogTitle>
+      <DialogTitle>{t('Mouvement de stock —')} {item?.label}</DialogTitle>
       <DialogContent>
         {!!error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>Stock actuel : <b>{fNum(item?.quantity_kg)} kg</b></Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>{t('Stock actuel :')} <b>{fNum(item?.quantity_kg)} {t('kg')}</b></Typography>
         <ToggleButtonGroup exclusive fullWidth value={type} onChange={(_, v) => v && setType(v)} sx={{ mb: 2 }}>
           {Object.entries(MOVE).map(([key, mv]) => (
             <ToggleButton key={key} value={key} sx={{ gap: 1 }}>
-              <Iconify icon={mv.icon} /> {mv.label}
+              <Iconify icon={mv.icon} /> {t(mv.label)}
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
         <Stack spacing={2}>
-          <TextField label={type === 'adjust' ? 'Quantité comptée (kg)' : 'Quantité (kg)'} type="number" value={qty} onChange={(e) => setQty(e.target.value)} />
-          <TextField label="Motif (optionnel)" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ex : vente au recycleur, inventaire mensuel…" />
+          <TextField label={type === 'adjust' ? t('Quantité comptée (kg)') : t('Quantité (kg)')} type="number" value={qty} onChange={(e) => setQty(e.target.value)} />
+          <TextField label={t('Motif (optionnel)')} value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t('Ex : vente au recycleur, inventaire mensuel…')} />
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Annuler</Button>
-        <LoadingButton variant="contained" loading={saving} onClick={save} disabled={qty === ''}>Valider</LoadingButton>
+        <Button variant="outlined" color="inherit" onClick={onClose}>{t('Annuler')}</Button>
+        <LoadingButton variant="contained" loading={saving} onClick={save} disabled={qty === ''}>{t('Valider')}</LoadingButton>
       </DialogActions>
     </Dialog>
   );
@@ -182,7 +184,7 @@ export function StorageView() {
   if (points && !points.length) {
     return (
       <DashboardContent>
-        <Empty title="Aucun point de collecte" description="Créez d’abord un point de collecte pour gérer son stock." icon="solar:box-minimalistic-bold-duotone" />
+        <Empty title={t('Aucun point de collecte')} description={t('Créez d’abord un point de collecte pour gérer son stock.')} icon="solar:box-minimalistic-bold-duotone" />
       </DashboardContent>
     );
   }
@@ -191,17 +193,17 @@ export function StorageView() {
     <DashboardContent maxWidth="xl">
       <PageHeader
         icon="solar:box-bold-duotone"
-        title="Espace de stockage"
-        subtitle="Suivez la capacité et la disponibilité de vos stocks en temps réel"
+        title={t('Espace de stockage')}
+        subtitle={t('Suivez la capacité et la disponibilité de vos stocks en temps réel')}
         action={
           <Stack direction="row" spacing={1.5}>
-            <TextField select size="small" label="Point de collecte" value={pointId ?? ''} onChange={(e) => router.push(`?p=${e.target.value}`)} sx={{ minWidth: 260 }}>
+            <TextField select size="small" label={t('Point de collecte')} value={pointId ?? ''} onChange={(e) => router.push(`?p=${e.target.value}`)} sx={{ minWidth: 260 }}>
               {(points ?? []).map((p) => (
                 <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
               ))}
             </TextField>
             <Button variant="outlined" color="inherit" disabled={!pointId} onClick={() => printDocument('storage', pointId)} startIcon={<Iconify icon="solar:printer-minimalistic-bold" />}>
-              Imprimer
+              {t('Imprimer')}
             </Button>
           </Stack>
         }
@@ -210,37 +212,37 @@ export function StorageView() {
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ p: 3, height: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Typography variant="h6" sx={{ alignSelf: 'flex-start', mb: 2 }}>Taux d’occupation</Typography>
-            <Ring value={o?.usage_percent ?? 0} size={170} label="occupé" />
+            <Typography variant="h6" sx={{ alignSelf: 'flex-start', mb: 2 }}>{t('Taux d’occupation')}</Typography>
+            <Ring value={o?.usage_percent ?? 0} size={170} label={t('occupé')} />
             <Stack direction="row" spacing={1} sx={{ mt: 3, width: 1 }}>
-              <TextField size="small" fullWidth type="number" label="Capacité (kg)" value={capacity} onChange={(e) => setCapacity(e.target.value)} />
-              <Button variant="soft" onClick={saveCapacity}>OK</Button>
+              <TextField size="small" fullWidth type="number" label={t('Capacité (kg)')} value={capacity} onChange={(e) => setCapacity(e.target.value)} />
+              <Button variant="soft" onClick={saveCapacity}>{t('OK')}</Button>
             </Stack>
           </Card>
         </Grid>
         <Grid size={{ xs: 12, md: 8 }}>
           <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, height: 1 }}>
-            <KpiCard title="Stock total" value={`${fNum(o?.used_kg ?? 0)} kg`} icon="solar:box-bold-duotone" />
-            <KpiCard title="Place disponible" value={`${fNum(o?.available_kg ?? 0)} kg`} icon="solar:inbox-archive-bold-duotone" color="info" delay={0.05} />
-            <KpiCard title="Articles" value={o?.items_count ?? 0} icon="solar:list-bold-duotone" color="secondary" delay={0.1} />
-            <KpiCard title="Stocks bas" value={o?.low_stock_count ?? 0} icon="solar:danger-triangle-bold-duotone" color="warning" delay={0.15} caption="Sous le seuil d’alerte" />
+            <KpiCard title={t('Stock total')} value={`${fNum(o?.used_kg ?? 0)} ${t('kg')}`} icon="solar:box-bold-duotone" />
+            <KpiCard title={t('Place disponible')} value={`${fNum(o?.available_kg ?? 0)} ${t('kg')}`} icon="solar:inbox-archive-bold-duotone" color="info" delay={0.05} />
+            <KpiCard title={t('Articles')} value={o?.items_count ?? 0} icon="solar:list-bold-duotone" color="secondary" delay={0.1} />
+            <KpiCard title={t('Stocks bas')} value={o?.low_stock_count ?? 0} icon="solar:danger-triangle-bold-duotone" color="warning" delay={0.15} caption={t('Sous le seuil d’alerte')} />
           </Box>
         </Grid>
 
         <Grid size={{ xs: 12, lg: 7 }}>
           <Card>
             <CardHeader
-              title="Articles en stock"
-              action={<Button size="small" variant="contained" startIcon={<Iconify icon="mingcute:add-line" />} onClick={() => setItemDialog({ open: true, item: null })}>Article</Button>}
+              title={t('Articles en stock')}
+              action={<Button size="small" variant="contained" startIcon={<Iconify icon="mingcute:add-line" />} onClick={() => setItemDialog({ open: true, item: null })}>{t('Article')}</Button>}
             />
             <Scrollbar>
               <Table sx={{ minWidth: 560 }}>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Article</TableCell>
-                    <TableCell align="right">Quantité</TableCell>
-                    <TableCell align="right">Seuil</TableCell>
-                    <TableCell align="right">Actions</TableCell>
+                    <TableCell>{t('Article')}</TableCell>
+                    <TableCell align="right">{t('Quantité')}</TableCell>
+                    <TableCell align="right">{t('Seuil')}</TableCell>
+                    <TableCell align="right">{t('Actions')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -251,18 +253,18 @@ export function StorageView() {
                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>{it.category_name ?? '—'}</Typography>
                       </TableCell>
                       <TableCell align="right">
-                        <b>{fNum(it.quantity_kg)} kg</b>
-                        {it.is_low_stock && <Label color="warning" sx={{ ml: 1 }}>Stock bas</Label>}
+                        <b>{fNum(it.quantity_kg)} {t('kg')}</b>
+                        {it.is_low_stock && <Label color="warning" sx={{ ml: 1 }}>{t('Stock bas')}</Label>}
                       </TableCell>
-                      <TableCell align="right">{it.min_threshold_kg != null ? `${fNum(it.min_threshold_kg)} kg` : '—'}</TableCell>
+                      <TableCell align="right">{it.min_threshold_kg != null ? `${fNum(it.min_threshold_kg)} ${t('kg')}` : '—'}</TableCell>
                       <TableCell align="right">
-                        <Tooltip title="Mouvement">
+                        <Tooltip title={t('Mouvement')}>
                           <IconButton color="primary" onClick={() => setMoveItem(it)}><Iconify icon="solar:transfer-vertical-bold" /></IconButton>
                         </Tooltip>
-                        <Tooltip title="Modifier">
+                        <Tooltip title={t('Modifier')}>
                           <IconButton onClick={() => setItemDialog({ open: true, item: it })}><Iconify icon="solar:pen-bold" /></IconButton>
                         </Tooltip>
-                        <Tooltip title="Supprimer (stock à 0)">
+                        <Tooltip title={t('Supprimer (stock à 0)')}>
                           <span>
                             <IconButton color="error" disabled={it.quantity_kg > 0} onClick={async () => { await axios.delete(`${endpoints.storage(pointId)}/items/${it.id}`); refresh(); }}>
                               <Iconify icon="solar:trash-bin-trash-bold" />
@@ -275,13 +277,13 @@ export function StorageView() {
                 </TableBody>
               </Table>
             </Scrollbar>
-            {o?.items?.length === 0 && <Typography variant="body2" sx={{ p: 3, color: 'text.secondary' }}>Aucun article. Ajoutez-en un, ou réceptionnez un achat.</Typography>}
+            {o?.items?.length === 0 && <Typography variant="body2" sx={{ p: 3, color: 'text.secondary' }}>{t('Aucun article. Ajoutez-en un, ou réceptionnez un achat.')}</Typography>}
           </Card>
         </Grid>
 
         <Grid size={{ xs: 12, lg: 5 }}>
           <Card sx={{ height: 1 }}>
-            <CardHeader title="Derniers mouvements" />
+            <CardHeader title={t('Derniers mouvements')} />
             <Stack spacing={1.5} sx={{ p: 2.5 }}>
               {(movements.data ?? []).map((mv) => (
                 <Stack key={mv.id} direction="row" spacing={1.5} alignItems="center">
@@ -290,14 +292,14 @@ export function StorageView() {
                   </Box>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography variant="subtitle2" noWrap>{mv.item_label}</Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>{mv.reason ?? MOVE[mv.type].label} · {fDateTime(mv.created_at)}</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>{mv.reason ?? t(MOVE[mv.type].label)} · {fDateTime(mv.created_at)}</Typography>
                   </Box>
                   <Typography variant="subtitle2" sx={{ color: mv.quantity_kg >= 0 ? 'success.main' : 'error.main' }}>
-                    {mv.quantity_kg >= 0 ? '+' : ''}{fNum(mv.quantity_kg)} kg
+                    {mv.quantity_kg >= 0 ? '+' : ''}{fNum(mv.quantity_kg)} {t('kg')}
                   </Typography>
                 </Stack>
               ))}
-              {movements.data?.length === 0 && <Typography variant="body2" sx={{ color: 'text.secondary' }}>Aucun mouvement.</Typography>}
+              {movements.data?.length === 0 && <Typography variant="body2" sx={{ color: 'text.secondary' }}>{t('Aucun mouvement.')}</Typography>}
             </Stack>
           </Card>
         </Grid>

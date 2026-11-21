@@ -19,6 +19,8 @@ import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
 import { useRouter, useSearchParams } from 'src/routes/hooks';
 
+import { t } from 'src/locales/i18n';
+
 import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
 
@@ -81,15 +83,15 @@ export function JwtSignInView() {
   return (
     <Box sx={{ maxWidth: 420, width: 1, mx: 'auto' }}>
       <Typography variant="overline" sx={{ color: 'primary.main', letterSpacing: 2 }}>
-        Espace professionnel
+        {t('Espace professionnel')}
       </Typography>
       <Typography variant="h3" sx={{ mt: 1, mb: 1 }}>
-        Bon retour parmi nous 🌿
+        {t('Bon retour parmi nous 🌿')}
       </Typography>
       <Typography variant="body2" sx={{ color: 'text.secondary', mb: 4 }}>
-        {`Pas encore de compte ? `}
+        {t('Pas encore de compte ? ')}
         <Link component={RouterLink} href={paths.auth.jwt.signUp} variant="subtitle2">
-          Rejoindre CLAC
+          {t('Rejoindre CLAC')}
         </Link>
       </Typography>
 
@@ -103,7 +105,7 @@ export function JwtSignInView() {
         <Stack spacing={2.5}>
           <Field.Text
             name="email"
-            label="Adresse email"
+            label={t('Adresse email')}
             autoComplete="email"
             slotProps={{
               inputLabel: { shrink: true },
@@ -119,7 +121,7 @@ export function JwtSignInView() {
 
           <Field.Text
             name="password"
-            label="Mot de passe"
+            label={t('Mot de passe')}
             autoComplete="current-password"
             type={showPassword.value ? 'text' : 'password'}
             slotProps={{
@@ -151,13 +153,13 @@ export function JwtSignInView() {
             endIcon={<Iconify icon="eva:arrow-forward-fill" />}
             sx={{ py: 1.5, boxShadow: (theme) => theme.customShadows.primary }}
           >
-            Se connecter
+            {t('Se connecter')}
           </LoadingButton>
         </Stack>
       </Form>
 
       <Divider sx={{ my: 4, typography: 'overline', color: 'text.disabled', '&::before, &::after': { borderTopStyle: 'dashed' } }}>
-        Comptes de démonstration
+        {t('Comptes de démonstration')}
       </Divider>
 
       <Stack direction="row" flexWrap="wrap" gap={1}>
@@ -167,13 +169,13 @@ export function JwtSignInView() {
             variant="outlined"
             color="primary"
             icon={<Iconify icon={account.icon} />}
-            label={account.label}
+            label={t(account.label)}
             onClick={() => fillDemo(account)}
           />
         ))}
       </Stack>
       <Typography variant="caption" sx={{ display: 'block', mt: 1.5, color: 'text.disabled' }}>
-        Cliquez sur un rôle pour remplir le formulaire (données créées par <code>npm run seed</code>).
+        {t('Cliquez sur un rôle pour remplir le formulaire (données créées par')} <code>{t('npm run seed')}</code>).
       </Typography>
     </Box>
   );

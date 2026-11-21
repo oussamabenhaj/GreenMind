@@ -5,6 +5,8 @@ import Slider from '@mui/material/Slider';
 import Typography from '@mui/material/Typography';
 import FormHelperText from '@mui/material/FormHelperText';
 
+import { t } from 'src/locales/i18n';
+
 // ----------------------------------------------------------------------
 
 export function RHFSlider({ name, label, helperText, ...other }) {
@@ -25,7 +27,7 @@ export function RHFSlider({ name, label, helperText, ...other }) {
           <Slider {...field} valueLabelDisplay="auto" {...other} />
 
           {(!!error || helperText) && (
-            <FormHelperText error={!!error}>{error?.message ?? helperText}</FormHelperText>
+            <FormHelperText error={!!error}>{(error?.message ? t(error.message) : helperText)}</FormHelperText>
           )}
         </Box>
       )}

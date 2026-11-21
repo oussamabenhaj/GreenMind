@@ -16,6 +16,7 @@ import { useSpace } from 'src/hooks/use-space';
 
 import { fQty, fFromNow, REQUEST_STATUS } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import { endpoints } from 'src/lib/axios';
 import { useSocketEvent } from 'src/lib/socket';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -49,25 +50,25 @@ export function BuyerDashboardView() {
     <DashboardContent maxWidth="xl">
       <HeroBanner
         logo={LOGO_URL}
-        kicker="Espace acheteur"
+        kicker={t('Espace acheteur')}
         title={`${greeting()}, ${user?.displayName} 👋`}
-        subtitle="Trouvez les matières dont vous avez besoin et commandez au prix affiché, remise quantité comprise."
+        subtitle={t('Trouvez les matières dont vous avez besoin et commandez au prix affiché, remise quantité comprise.')}
         actions={
           <>
             <Button variant="contained" onClick={() => setCreate(true)} startIcon={<Iconify icon="solar:add-circle-bold" />} sx={heroButtonSx.primary}>
-              Publier un besoin
+              {t('Publier un besoin')}
             </Button>
             <Button component={RouterLink} href={sp.marketplace} variant="outlined" startIcon={<Iconify icon="solar:magic-stick-3-bold-duotone" />} sx={heroButtonSx.ghost}>
-              Recherche IA
+              {t('Recherche IA')}
             </Button>          </>
         }
       />
 
       <Grid container spacing={3}>
         {[
-          ['Demandes ouvertes', o?.requests.open, 'solar:inbox-out-bold-duotone', 'primary', `${o?.requests.total ?? 0} au total`],
-          ['En cours', o?.requests.in_progress, 'solar:hourglass-bold-duotone', 'info', 'Contact établi'],
-          ['Satisfaites', o?.requests.fulfilled, 'solar:check-circle-bold-duotone', 'secondary', 'Besoins couverts'],
+          [t('Demandes ouvertes'), o?.requests.open, 'solar:inbox-out-bold-duotone', 'primary', t('{{v}} au total', { v: o?.requests.total ?? 0 })],
+          [t('En cours'), o?.requests.in_progress, 'solar:hourglass-bold-duotone', 'info', t('Contact établi')],
+          [t('Satisfaites'), o?.requests.fulfilled, 'solar:check-circle-bold-duotone', 'secondary', t('Besoins couverts')],
         ].map(([title, value, icon, color, caption], i) => (
           <Grid key={title} size={{ xs: 12, sm: 6, lg: 3 }}>
             <KpiCard title={title} value={value ?? 0} icon={icon} color={color} caption={caption} loading={overview.loading} delay={i * 0.05} />
@@ -77,12 +78,12 @@ export function BuyerDashboardView() {
         <Grid size={12}>
           <Card sx={{ height: 1 }}>
             <CardHeader
-              title="Mes dernières demandes"
-              action={<Button component={RouterLink} href={sp.requests} size="small" endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}>Tout voir</Button>}
+              title={t('Mes dernières demandes')}
+              action={<Button component={RouterLink} href={sp.requests} size="small" endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}>{t('Tout voir')}</Button>}
             />
             <Box sx={{ p: 1.5 }}>
               {requests.data?.length === 0 && (
-                <Empty title="Aucune demande" description="Publiez un besoin pour être contacté par les vendeurs." icon="solar:inbox-out-bold-duotone" action={<Button variant="contained" onClick={() => setCreate(true)}>Publier un besoin</Button>} />
+                <Empty title={t('Aucune demande')} description={t('Publiez un besoin pour être contacté par les vendeurs.')} icon="solar:inbox-out-bold-duotone" action={<Button variant="contained" onClick={() => setCreate(true)}>{t('Publier un besoin')}</Button>} />
               )}
               {(requests.data ?? []).map((r) => (
                 <ListItemButton key={r.id} onClick={() => router.push(`${sp.requests}?r=${r.id}`)} sx={{ borderRadius: 1.5, gap: 2, py: 1.5 }}>
@@ -106,7 +107,7 @@ export function BuyerDashboardView() {
 
         <Grid size={12}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Sélectionnés pour vous
+            {t('Sélectionnés pour vous')}
           </Typography>
           <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(4, 1fr)' } }}>
             {(products.data ?? []).map((p, i) => (

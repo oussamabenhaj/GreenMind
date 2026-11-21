@@ -1,13 +1,13 @@
 import { query } from '../../config/db.js';
 
 /** Inserts one notification per user id (single statement). */
-export async function createMany(userIds, { type, title, message, data = {}, link = null }, db = { query }) {
+export async function createMany(userIds, { type, title, message, data = {}, link = null, i18n = {} }, db = { query }) {
   if (!userIds.length) return [];
   const { rows } = await db.query(`
-    INSERT INTO notifications (user_id, type, title, message, data, link)
-    SELECT uid, $2::varchar, $3::varchar, $4::text, $5::jsonb, $6::varchar FROM unnest($1::uuid[]) AS uid
+    INSERT INTO notifications (user_id, type, title, message, data, link, i18n)
+    SELECT uid, $2::varchar, $3::varchar, $4::text, $5::jsonb, $6::varchar, $7::jsonb FROM unnest($1::uuid[]) AS uid
     RETURNING *
-  `, [userIds, type, title, message, JSON.stringify(data), link]);
+  `, [userIds, type, title, message, JSON.stringify(data), link, JSON.stringify(i18n)]);
   return rows;
 }
 

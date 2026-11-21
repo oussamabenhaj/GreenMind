@@ -15,6 +15,7 @@ import LoadingButton from '@mui/lab/LoadingButton';
 
 import { fDate, initials, ROLE_LABELS, GOVERNORATES } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import axios, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -25,7 +26,6 @@ import { Iconify } from 'src/components/iconify';
 import { useAuthContext } from 'src/auth/hooks';
 
 import { useReferenceData } from '../components/ui';
-
 // ----------------------------------------------------------------------
 
 const FIELDS = ['name', 'company_name', 'phone', 'bio', 'avatar_url', 'gouvernorat', 'address'];
@@ -54,7 +54,7 @@ export function ProfileView() {
   const locate = () =>
     navigator.geolocation?.getCurrentPosition(
       (pos) => setForm((f) => ({ ...f, lat: pos.coords.latitude.toFixed(5), lng: pos.coords.longitude.toFixed(5) })),
-      () => setStatus((s) => ({ ...s, error: 'Géolocalisation refusée' }))
+      () => setStatus((s) => ({ ...s, error: t('Géolocalisation refusée') }))
     );
 
   const save = async () => {
@@ -76,7 +76,7 @@ export function ProfileView() {
   const changePassword = async () => {
     try {
       await axios.patch(endpoints.auth.password, { current_password: pwd.current_password, new_password: pwd.new_password });
-      setPwd({ current_password: '', new_password: '', msg: 'Mot de passe modifié ✅', error: '' });
+      setPwd({ current_password: '', new_password: '', msg: t('Mot de passe modifié ✅'), error: '' });
     } catch (error) {
       setPwd((p) => ({ ...p, msg: '', error: error.message }));
     }
@@ -101,12 +101,12 @@ export function ProfileView() {
           <Box sx={{ flex: 1 }}>
             <Typography variant="h4">{user.displayName}</Typography>
             <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-              <Label color="primary">{ROLE_LABELS[user.role]}</Label>
-              <Label color={user.is_verified ? 'success' : 'warning'}>{user.is_verified ? 'Compte vérifié' : 'Vérification en attente'}</Label>
+              <Label color="primary">{t(ROLE_LABELS[user.role])}</Label>
+              <Label color={user.is_verified ? 'success' : 'warning'}>{user.is_verified ? t('Compte vérifié') : t('Vérification en attente')}</Label>
             </Stack>
           </Box>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Membre depuis le {fDate(user.created_at)}
+            {t('Membre depuis le')} {fDate(user.created_at)}
           </Typography>
         </Stack>
       </Card>
@@ -115,36 +115,36 @@ export function ProfileView() {
         <Grid size={{ xs: 12, md: 8 }}>
           <Card sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 3 }}>
-              Informations personnelles et professionnelles
+              {t('Informations personnelles et professionnelles')}
             </Typography>
-            {status.ok && <Alert severity="success" sx={{ mb: 2 }}>Profil mis à jour</Alert>}
+            {status.ok && <Alert severity="success" sx={{ mb: 2 }}>{t('Profil mis à jour')}</Alert>}
             {!!status.error && <Alert severity="error" sx={{ mb: 2 }}>{status.error}</Alert>}
             <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-              <TextField label="Nom" value={form.name} onChange={set('name')} />
-              <TextField label="Entreprise" value={form.company_name} onChange={set('company_name')} />
-              <TextField label="Email" value={user.email} disabled />
-              <TextField label="Téléphone" value={form.phone} onChange={set('phone')} />
-              <TextField select label="Gouvernorat" value={form.gouvernorat} onChange={set('gouvernorat')}>
+              <TextField label={t('Nom')} value={form.name} onChange={set('name')} />
+              <TextField label={t('Entreprise')} value={form.company_name} onChange={set('company_name')} />
+              <TextField label={t('Email')} value={user.email} disabled />
+              <TextField label={t('Téléphone')} value={form.phone} onChange={set('phone')} />
+              <TextField select label={t('Gouvernorat')} value={form.gouvernorat} onChange={set('gouvernorat')}>
                 {GOVERNORATES.map((g) => (
                   <MenuItem key={g} value={g}>
-                    {g}
+                    {t(g)}
                   </MenuItem>
                 ))}
               </TextField>
-              <TextField label="Adresse" value={form.address} onChange={set('address')} />
-              <TextField label="Latitude" value={form.lat} onChange={set('lat')} />
+              <TextField label={t('Adresse')} value={form.address} onChange={set('address')} />
+              <TextField label={t('Latitude')} value={form.lat} onChange={set('lat')} />
               <Stack direction="row" spacing={1}>
-                <TextField fullWidth label="Longitude" value={form.lng} onChange={set('lng')} />
+                <TextField fullWidth label={t('Longitude')} value={form.lng} onChange={set('lng')} />
                 <Button variant="soft" onClick={locate} sx={{ flexShrink: 0 }}>
                   <Iconify icon="solar:gps-bold-duotone" />
                 </Button>
               </Stack>
-              <TextField label="Photo de profil (URL)" value={form.avatar_url} onChange={set('avatar_url')} sx={{ gridColumn: { sm: 'span 2' } }} />
-              <TextField label="Présentation" multiline rows={3} value={form.bio} onChange={set('bio')} sx={{ gridColumn: { sm: 'span 2' } }} />
+              <TextField label={t('Photo de profil (URL)')} value={form.avatar_url} onChange={set('avatar_url')} sx={{ gridColumn: { sm: 'span 2' } }} />
+              <TextField label={t('Présentation')} multiline rows={3} value={form.bio} onChange={set('bio')} sx={{ gridColumn: { sm: 'span 2' } }} />
             </Box>
 
             <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>
-              Catégories suivies (demandes & alertes)
+              {t('Catégories suivies (demandes & alertes)')}
             </Typography>
             <Stack direction="row" flexWrap="wrap" gap={1}>
               {categories.map((c) => {
@@ -163,7 +163,7 @@ export function ProfileView() {
 
             <Stack direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
               <LoadingButton variant="contained" size="large" loading={status.saving} onClick={save} startIcon={<Iconify icon="solar:diskette-bold" />}>
-                Enregistrer
+                {t('Enregistrer')}
               </LoadingButton>
             </Stack>
           </Card>
@@ -172,15 +172,15 @@ export function ProfileView() {
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>
-              Sécurité
+              {t('Sécurité')}
             </Typography>
             {!!pwd.msg && <Alert severity="success" sx={{ mb: 2 }}>{pwd.msg}</Alert>}
             {!!pwd.error && <Alert severity="error" sx={{ mb: 2 }}>{pwd.error}</Alert>}
             <Stack spacing={2}>
-              <TextField type="password" label="Mot de passe actuel" value={pwd.current_password} onChange={(e) => setPwd((p) => ({ ...p, current_password: e.target.value }))} />
-              <TextField type="password" label="Nouveau mot de passe" helperText="8 caractères minimum" value={pwd.new_password} onChange={(e) => setPwd((p) => ({ ...p, new_password: e.target.value }))} />
+              <TextField type="password" label={t('Mot de passe actuel')} value={pwd.current_password} onChange={(e) => setPwd((p) => ({ ...p, current_password: e.target.value }))} />
+              <TextField type="password" label={t('Nouveau mot de passe')} helperText={t('8 caractères minimum')} value={pwd.new_password} onChange={(e) => setPwd((p) => ({ ...p, new_password: e.target.value }))} />
               <Button variant="outlined" onClick={changePassword} disabled={!pwd.current_password || pwd.new_password.length < 8}>
-                Changer le mot de passe
+                {t('Changer le mot de passe')}
               </Button>
             </Stack>
           </Card>

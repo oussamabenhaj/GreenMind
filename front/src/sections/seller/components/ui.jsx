@@ -10,11 +10,14 @@ import Pagination from '@mui/material/Pagination';
 
 import { fQty, tierAt, convertQty } from 'src/utils/clac';
 
+import { t, currentLang } from 'src/locales/i18n';
+
+/** Translate a prop at the sink when it's a plain string (nodes are left untouched). */
+const tr = (v) => (typeof v === 'string' ? t(v) : v);
 import axios, { endpoints } from 'src/lib/axios';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
-
 // ----------------------------------------------------------------------
 
 export function PageHeader({ title, subtitle, icon, action, sx }) {
@@ -45,10 +48,10 @@ export function PageHeader({ title, subtitle, icon, action, sx }) {
         </Box>
       )}
       <Box sx={{ flexGrow: 1 }}>
-        <Typography variant="h4">{title}</Typography>
+        <Typography variant="h4">{tr(title)}</Typography>
         {subtitle && (
           <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-            {subtitle}
+            {tr(subtitle)}
           </Typography>
         )}
       </Box>
@@ -97,7 +100,7 @@ export function KpiCard({ title, value, caption, icon, color = 'primary', loadin
         <Iconify icon={icon} width={28} />
       </Box>
       <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
-        {title}
+        {tr(title)}
       </Typography>
       {loading ? (
         <Skeleton width={90} height={44} />
@@ -119,7 +122,7 @@ export function KpiCard({ title, value, caption, icon, color = 'primary', loadin
 
 export function StatusLabel({ map, value }) {
   const meta = map[value] ?? { label: value, color: 'default' };
-  return <Label color={meta.color}>{meta.label}</Label>;
+  return <Label color={meta.color}>{t(meta.label)}</Label>;
 }
 
 export function ListSkeleton({ count = 6, height = 120 }) {
@@ -163,10 +166,10 @@ export function Empty({ title, description, action, icon = 'solar:leaf-bold-duot
       >
         <Iconify icon={icon} width={48} />
       </Box>
-      <Typography variant="h6">{title}</Typography>
+      <Typography variant="h6">{tr(title)}</Typography>
       {description && (
         <Typography variant="body2" sx={{ color: 'text.secondary', maxWidth: 420 }}>
-          {description}
+          {tr(description)}
         </Typography>
       )}
       {action && <Box sx={{ mt: 2 }}>{action}</Box>}
@@ -189,21 +192,23 @@ export function PagePagination({ meta, onChange }) {
 
 // ----------------------------------------------------------------------
 
-let referenceCache = null;
+// categories/markets are localised by the API → cached per interface language
+const referenceCache = {};
 
 /** Categories + markets (cached for the session). */
 export function useReferenceData() {
-  const [data, setData] = useState(referenceCache ?? { categories: [], markets: [] });
+  const lang = currentLang();
+  const [data, setData] = useState(referenceCache[lang] ?? { categories: [], markets: [] });
 
   useEffect(() => {
-    if (referenceCache) return;
+    if (referenceCache[lang]) return;
     Promise.all([axios.get(endpoints.categories), axios.get(endpoints.markets)])
       .then(([c, mk]) => {
-        referenceCache = { categories: c.data.data, markets: mk.data.data };
-        setData(referenceCache);
+        referenceCache[lang] = { categories: c.data.data, markets: mk.data.data };
+        setData(referenceCache[lang]);
       })
       .catch(() => {});
-  }, []);
+  }, [lang]);
 
   return data;
 }
@@ -226,7 +231,7 @@ export function EcoChart({ series = [], type = 'area', height = 260, format = (v
   const points = series.map((s, i) => [x(i), y(s.value)]);
   const line = points.map(([px, py], i) => `${i ? 'L' : 'M'}${px},${py}`).join(' ');
   const area = points.length ? `${line} L${x(series.length - 1)},${H - pad.b} L${pad.l},${H - pad.b} Z` : '';
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => max * t);
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((tt) => max * tt);
   const gradId = `eco-grad-${color}`;
 
   return (
@@ -238,11 +243,11 @@ export function EcoChart({ series = [], type = 'area', height = 260, format = (v
             <stop offset="1" stopColor="currentColor" stopOpacity="0" />
           </linearGradient>
         </defs>
-        {ticks.map((t) => (
-          <g key={t}>
-            <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} stroke="currentColor" strokeOpacity="0.08" strokeDasharray="4 4" />
-            <text x={pad.l - 8} y={y(t) + 4} textAnchor="end">
-              {format(Math.round(t))}
+        {ticks.map((tt) => (
+          <g key={tt}>
+            <line x1={pad.l} x2={W - pad.r} y1={y(tt)} y2={y(tt)} stroke="currentColor" strokeOpacity="0.08" strokeDasharray="4 4" />
+            <text x={pad.l - 8} y={y(tt) + 4} textAnchor="end">
+              {format(Math.round(tt))}
             </text>
           </g>
         ))}
@@ -261,7 +266,7 @@ export function EcoChart({ series = [], type = 'area', height = 260, format = (v
             />
             {points.map(([px, py], i) => (
               <circle key={i} cx={px} cy={py} r="4" fill="white" stroke="currentColor" strokeWidth="2.5">
-                <title>{`${series[i].label} : ${format(series[i].value)}`}</title>
+                <title>{`${t(series[i].label)} : ${format(series[i].value)}`}</title>
               </circle>
             ))}
           </>
@@ -279,7 +284,7 @@ export function EcoChart({ series = [], type = 'area', height = 260, format = (v
                 animate={{ y: y(s.value), height: H - pad.b - y(s.value) }}
                 transition={{ duration: 0.8, delay: i * 0.04 }}
               >
-                <title>{`${s.label} : ${format(s.value)}`}</title>
+                <title>{`${t(s.label)} : ${format(s.value)}`}</title>
               </m.rect>
             );
           })
@@ -288,7 +293,7 @@ export function EcoChart({ series = [], type = 'area', height = 260, format = (v
           const lx = type === 'area' ? x(i) : pad.l + ((W - pad.l - pad.r) / series.length) * (i + 0.5);
           return (
             <text key={s.label} x={lx} y={H - 10} textAnchor="middle">
-              {s.label}
+              {t(s.label)}
             </text>
           );
         })}
@@ -397,16 +402,16 @@ export function TierHint({ product, quantity, unit, displayUnit = product?.unit 
   return (
     <Typography variant="caption" sx={{ color: 'text.secondary' }}>
       <Iconify icon="solar:tag-price-bold" width={14} sx={{ mr: 0.5, verticalAlign: '-2px' }} />
-      {tier.current > 0 ? `Palier -${tier.current} % appliqué` : 'Aucun palier de remise atteint'}
+      {tier.current > 0 ? t('Palier -{{current}} % appliqué', { current: tier.current }) : t('Aucun palier de remise atteint')}
       {' · '}
       {tier.next
-        ? `encore ${fQty(convertQty(tier.missing, product.unit, displayUnit), displayUnit)} pour -${tier.next.percentage} %`
-        : 'meilleur palier de l’annonce'}
+        ? t('encore {{qty}} pour -{{percentage}} %', { qty: fQty(convertQty(tier.missing, product.unit, displayUnit), displayUnit), percentage: tier.next.percentage })
+        : t('meilleur palier de l’annonce')}
     </Typography>
   );
 }
 
 export const greeting = () => {
   const hour = new Date().getHours();
-  return hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+  return hour < 12 ? t('Bonjour') : hour < 18 ? t('Bon après-midi') : t('Bonsoir');
 };

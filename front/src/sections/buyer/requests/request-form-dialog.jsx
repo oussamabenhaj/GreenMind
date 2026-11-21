@@ -19,10 +19,12 @@ import {
   QUANTITY_DISCOUNT_PERCENTAGE, FULL_QUANTITY_DISCOUNT_PERCENTAGE,
 } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import axios, { endpoints } from 'src/lib/axios';
 
 import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
+import { TranslationNotice } from 'src/components/clac/translation-notice';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -45,7 +47,7 @@ const Schema = zod.object({
 });
 
 const toForm = (r, product, user) => ({
-  title: r?.title ?? (product ? `Achat : ${product.title}` : ''),
+  title: r?.title ?? (product ? t('Achat : {{title}}', { title: product.title }) : ''),
   description: r?.description ?? '',
   category_id: r?.category_id ?? product?.category_id ?? '',
   market_id: r?.market_id ?? product?.market_id ?? '',
@@ -101,7 +103,7 @@ export function RequestFormDialog({ open, onClose, request, product, discountPro
       ...(v.gouvernorat && { gouvernorat: v.gouvernorat }),
     };
     try {
-      if (!request && !product && v.category_id === '') throw new Error('Choisissez une catégorie');
+      if (!request && !product && v.category_id === '') throw new Error(t('Choisissez une catégorie'));
       const res = request
         ? await axios.patch(endpoints.requests.details(request.id), payload)
         : await axios.post(endpoints.requests.list, { ...payload, ...(product && { product_id: product.id }) });
@@ -117,17 +119,18 @@ export function RequestFormDialog({ open, onClose, request, product, discountPro
       <Form methods={methods} onSubmit={onSubmit}>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Iconify icon="solar:inbox-out-bold-duotone" width={28} sx={{ color: 'primary.main' }} />
-          {request ? 'Modifier ma demande' : 'Nouvelle demande d’achat'}
+          {request ? t('Modifier ma demande') : t('Nouvelle demande d’achat')}
         </DialogTitle>
         <DialogContent>
+        <TranslationNotice item={request} fields={['title', 'description']} />
           {product && (
             <Alert severity="info" sx={{ mb: 2 }}>
-              Demande adressée directement à <b>{product.seller?.company_name || product.seller?.name}</b> pour « {product.title} ».
+              {t('Demande adressée directement à')} <b>{product.seller?.company_name || product.seller?.name}</b> {t('pour «')} {product.title} ».
             </Alert>
           )}
           {!product && !request && (
             <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-              Tous les vendeurs et points de collecte de la catégorie choisie seront notifiés en temps réel.
+              {t('Tous les vendeurs et points de collecte de la catégorie choisie seront notifiés en temps réel.')}
             </Typography>
           )}
           {!!error && (
@@ -136,21 +139,21 @@ export function RequestFormDialog({ open, onClose, request, product, discountPro
             </Alert>
           )}
           <Box sx={{ display: 'grid', gap: 2, pt: 1 }}>
-            <Field.Text name="title" label="Votre besoin" placeholder="Ex : 2 tonnes de grignons par mois pour compostage" />
-            <Field.Text name="description" label="Détails (qualité, fréquence, conditionnement…)" multiline rows={3} />
+            <Field.Text name="title" label={t('Votre besoin')} placeholder={t('Ex : 2 tonnes de grignons par mois pour compostage')} />
+            <Field.Text name="description" label={t('Détails (qualité, fréquence, conditionnement…)')} multiline rows={3} />
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' } }}>
               <Field.Select
                 name="category_id"
-                label="Catégorie"
+                label={t('Catégorie')}
                 disabled={!!product}
                 options={[{ value: '', label: '—' }, ...categories.map((c) => ({ value: c.id, label: c.name }))]}
               />
-              <Field.Text name="quantity" label="Quantité" type="number" />
-              <Field.Select name="unit" label="Unité" options={UNITS} />
-              <Field.Text name="max_price_per_unit" label="Prix max / unité (TND)" type="number" inputProps={{ step: '0.001' }} />
-              <Field.Select name="gouvernorat" label="Livraison à" options={[{ value: '', label: '—' }, ...GOVERNORATES.map((g) => ({ value: g, label: g }))]} />
-              <Field.Select name="market_id" label="Marché" options={[{ value: '', label: 'Aucun' }, ...markets.map((mk) => ({ value: mk.id, label: mk.name }))]} />
-              <Field.Text required name="needed_by" label="Besoin pour le" type="date" slotProps={{ inputLabel: { shrink: true } }} />
+              <Field.Text name="quantity" label={t('Quantité')} type="number" />
+              <Field.Select name="unit" label={t('Unité')} options={UNITS.map((u) => ({ ...u, label: t(u.label) }))} />
+              <Field.Text name="max_price_per_unit" label={t('Prix max / unité (TND)')} type="number" inputProps={{ step: '0.001' }} />
+              <Field.Select name="gouvernorat" label={t('Livraison à')} options={[{ value: '', label: '—' }, ...GOVERNORATES.map((g) => ({ value: g, label: t(g) }))]} />
+              <Field.Select name="market_id" label={t('Marché')} options={[{ value: '', label: t('Aucun') }, ...markets.map((mk) => ({ value: mk.id, label: mk.name }))]} />
+              <Field.Text required name="needed_by" label={t('Besoin pour le')} type="date" slotProps={{ inputLabel: { shrink: true } }} />
             </Box>
             {discountEnabled && discountThreshold != null && (
               <Box
@@ -169,11 +172,11 @@ export function RequestFormDialog({ open, onClose, request, product, discountPro
                     sx={{ color: discountPercentage ? 'success.dark' : 'text.disabled' }}
                   />
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="subtitle2">Remise quantité du vendeur</Typography>
+                    <Typography variant="subtitle2">{t('Remise quantité du vendeur')}</Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                       {discountPercentage
-                        ? `Remise de ${discountPercentage} % appliquée automatiquement : prix maximum ${fMoney(discountedPrice)} / ${unit}.`
-                        : `-${QUANTITY_DISCOUNT_PERCENTAGE} % pour toute commande au-delà de ${fQty(discountThreshold, listing.unit)}, -${FULL_QUANTITY_DISCOUNT_PERCENTAGE} % pour la quantité totale.`}
+                        ? t('Remise de {{discountPercentage}} % appliquée automatiquement : prix maximum {{amount}} / {{unit}}.', { discountPercentage, amount: fMoney(discountedPrice), unit })
+                        : t('-{{QUANTITY_DISCOUNT_PERCENTAGE}} % pour toute commande au-delà de {{qty}}, -{{FULL_QUANTITY_DISCOUNT_PERCENTAGE}} % pour la quantité totale.', { QUANTITY_DISCOUNT_PERCENTAGE, qty: fQty(discountThreshold, listing.unit), FULL_QUANTITY_DISCOUNT_PERCENTAGE })}
                     </Typography>
                   </Box>
                   {!!discountPercentage && (
@@ -189,10 +192,10 @@ export function RequestFormDialog({ open, onClose, request, product, discountPro
         </DialogContent>
         <DialogActions>
           <Button variant="outlined" color="inherit" onClick={onClose}>
-            Annuler
+            {t('Annuler')}
           </Button>
           <LoadingButton type="submit" variant="contained" loading={isSubmitting} startIcon={<Iconify icon="solar:plain-bold" />}>
-            {request ? 'Enregistrer' : 'Envoyer la demande'}
+            {request ? t('Enregistrer') : t('Envoyer la demande')}
           </LoadingButton>
         </DialogActions>
       </Form>

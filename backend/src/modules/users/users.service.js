@@ -29,3 +29,6 @@ export async function listCollectors(filters) {
   const page = paginationOf(filters);
   return paginated(await model.listByRole('collector', filters, page), page);
 }
+
+/** Sidebar badges (my products, pending purchases, unread messages…). */
+export const counters = (user) => model.counters(user.id, user.role);

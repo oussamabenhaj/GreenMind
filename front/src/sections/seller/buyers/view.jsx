@@ -17,17 +17,20 @@ import { useApi, cleanParams } from 'src/hooks/use-api';
 
 import { initials, GOVERNORATES } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { CellMain, DataTable } from 'src/components/clac/data-table';
+import { CountTabs, useTabCounts } from 'src/components/clac/count-tabs';
+import { useViewMode, ViewModeToggle } from 'src/components/clac/view-mode';
 
 import { useAuthContext } from 'src/auth/hooks';
 
 import { openConversation } from '../components/contact';
 import { Empty, PageHeader, ListSkeleton, PagePagination, useReferenceData } from '../components/ui';
-
 // ----------------------------------------------------------------------
 
 const DIRECTORIES = {
@@ -38,7 +41,7 @@ const DIRECTORIES = {
     icon: 'solar:users-group-rounded-bold-duotone',
     color: 'info',
     filterLabel: 'Matière recherchée',
-    stat: (u) => <><b>{u.open_requests_count}</b> demande(s) ouverte(s)</>,
+    stat: (u) => <><b>{u.open_requests_count}</b> {t('demande(s) ouverte(s)')}</>,
   },
   sellers: {
     url: endpoints.users.sellers,
@@ -49,7 +52,7 @@ const DIRECTORIES = {
     filterLabel: 'Matière proposée',
     stat: (u) => (
       <>
-        <b>{u.products_count}</b> produit(s){u.has_active_discount ? ' · 🏷️ promo en cours' : ''}
+        <b>{u.products_count}</b> {t('produit(s)')}{u.has_active_discount ? t(' · 🏷️ promo en cours') : ''}
       </>
     ),
   },
@@ -63,13 +66,20 @@ export function DirectoryView({ kind }) {
   const router = useRouter();
   const { user } = useAuthContext();
   const { categories } = useReferenceData();
-  const [filters, setFilters] = useState({ q: '', gouvernorat: '', category_id: '', near: false, page: 1 });
+  const [filters, setFilters] = useState({ q: '', gouvernorat: '', category_id: '', near: false, verified: '', page: 1 });
 
   const near = filters.near && user?.lat != null ? { lat: user.lat, lng: user.lng, radius_km: 150, sort: 'distance' } : {};
   const { data, meta, loading } = useApi(
     cfg.url,
-    cleanParams({ q: filters.q, gouvernorat: filters.gouvernorat, category_id: filters.category_id, page: filters.page, limit: 12, ...near })
+    cleanParams({ q: filters.q, gouvernorat: filters.gouvernorat, category_id: filters.category_id, verified: filters.verified, page: filters.page, limit: 12, ...near })
   );
+  const [view, setView] = useViewMode(`directory-${kind}`);
+  const counts = useTabCounts(
+    cfg.url,
+    [{ value: '', params: {} }, { value: 'true', params: { verified: true } }, { value: 'false', params: { verified: false } }],
+    cleanParams({ q: filters.q, gouvernorat: filters.gouvernorat, category_id: filters.category_id, ...near })
+  );
+  const contact = async (u) => router.push(await openConversation(u.id));
 
   const set = (patch) => setFilters((f) => ({ ...f, page: 1, ...patch }));
   const catName = (id) => categories.find((c) => c.id === id)?.name;
@@ -78,28 +88,42 @@ export function DirectoryView({ kind }) {
     <DashboardContent maxWidth="xl">
       <PageHeader icon={cfg.icon} title={cfg.title} subtitle={cfg.subtitle} />
 
-      <Card sx={{ p: 2.5, mb: 3 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
+      <Card sx={{ mb: 3 }}>
+        <Stack direction="row" alignItems="center" sx={{ px: 2.5, boxShadow: (theme) => `inset 0 -2px 0 0 ${theme.vars.palette.divider}` }}>
+          <CountTabs
+            value={filters.verified}
+            onChange={(v) => set({ verified: v })}
+            counts={counts}
+            sx={{ flex: 1 }}
+            tabs={[
+              { value: '', label: t('Tous'), color: 'default' },
+              { value: 'true', label: t('Vérifiés'), icon: 'solar:verified-check-bold', color: 'info' },
+              { value: 'false', label: t('Non vérifiés'), color: 'warning' },
+            ]}
+          />
+          <ViewModeToggle value={view} onChange={setView} />
+        </Stack>
+        <Stack sx={{ p: 2.5 }} direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
           <TextField
             fullWidth
-            placeholder="Nom, entreprise…"
+            placeholder={t('Nom, entreprise…')}
             value={filters.q}
             onChange={(e) => set({ q: e.target.value })}
             slotProps={{ input: { startAdornment: <InputAdornment position="start"><Iconify icon="eva:search-fill" /></InputAdornment> } }}
           />
-          <TextField select label={cfg.filterLabel} value={filters.category_id} onChange={(e) => set({ category_id: e.target.value })} sx={{ minWidth: 220 }}>
-            <MenuItem value="">Toutes</MenuItem>
+          <TextField select label={t(cfg.filterLabel)} value={filters.category_id} onChange={(e) => set({ category_id: e.target.value })} sx={{ minWidth: 220 }}>
+            <MenuItem value="">{t('Toutes')}</MenuItem>
             {categories.map((c) => (
               <MenuItem key={c.id} value={c.id}>
                 {c.name}
               </MenuItem>
             ))}
           </TextField>
-          <TextField select label="Gouvernorat" value={filters.gouvernorat} onChange={(e) => set({ gouvernorat: e.target.value })} sx={{ minWidth: 180 }}>
-            <MenuItem value="">Tous</MenuItem>
+          <TextField select label={t('Gouvernorat')} value={filters.gouvernorat} onChange={(e) => set({ gouvernorat: e.target.value })} sx={{ minWidth: 180 }}>
+            <MenuItem value="">{t('Tous')}</MenuItem>
             {GOVERNORATES.map((g) => (
               <MenuItem key={g} value={g}>
-                {g}
+                {t(g)}
               </MenuItem>
             ))}
           </TextField>
@@ -110,13 +134,25 @@ export function DirectoryView({ kind }) {
             startIcon={<Iconify icon="solar:map-arrow-square-bold-duotone" />}
             sx={{ flexShrink: 0, height: 54 }}
           >
-            Près de moi
+            {t('Près de moi')}
           </Button>
         </Stack>
       </Card>
 
       {loading && !data ? (
         <ListSkeleton height={240} />
+      ) : data?.length && view === 'table' ? (
+        <DataTable
+          rows={data}
+          columns={[
+            { label: kind === 'buyers' ? t('Acheteur') : t('Vendeur'), render: (u) => <CellMain avatar={initials(u.company_name || u.name)} color={cfg.color} title={<>{u.company_name || u.name}{u.is_verified && <Iconify icon="solar:verified-check-bold" width={16} sx={{ color: 'info.main', ml: 0.5, verticalAlign: '-3px' }} />}</>} subtitle={u.name} /> },
+            { label: t('Gouvernorat'), render: (u) => <>{t(u.gouvernorat) ?? '—'}{u.distance_km != null && <Typography component="span" variant="caption" sx={{ color: 'text.secondary', ml: 0.5 }}>· {u.distance_km} {t('km')}</Typography>}</> },
+            { label: t('Matières'), render: (u) => <Stack direction="row" flexWrap="wrap" gap={0.5}>{(u.category_ids ?? []).slice(0, 3).map((id) => <Label key={id} color="primary">{catName(id) ?? `#${id}`}</Label>)}</Stack> },
+            { label: t('Activité'), render: (u) => cfg.stat(u) },
+            { label: t('Téléphone'), nowrap: true, render: (u) => u.phone ?? '—' },
+            { label: '', align: 'right', stopPropagation: true, render: (u) => <Button size="small" variant="soft" startIcon={<Iconify icon="solar:chat-round-dots-bold" />} onClick={() => contact(u)}>{t('Contacter')}</Button> },
+          ]}
+        />
       ) : data?.length ? (
         <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' } }}>
           {data.map((b, i) => (
@@ -139,7 +175,7 @@ export function DirectoryView({ kind }) {
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   <Iconify icon="solar:map-point-bold" width={14} sx={{ mr: 0.5, verticalAlign: 'middle' }} />
-                  {b.gouvernorat ?? '—'}
+                  {t(b.gouvernorat) ?? '—'}
                   {b.distance_km != null && ` · ${b.distance_km} km`}
                 </Typography>
                 <Stack direction="row" flexWrap="wrap" justifyContent="center" gap={0.5} sx={{ my: 2, minHeight: 24 }}>
@@ -159,14 +195,14 @@ export function DirectoryView({ kind }) {
                   startIcon={<Iconify icon="solar:chat-round-dots-bold" />}
                   onClick={async () => router.push(await openConversation(b.id))}
                 >
-                  Contacter
+                  {t('Contacter')}
                 </Button>
               </Box>
             </Card>
           ))}
         </Box>
       ) : (
-        <Empty title="Aucun résultat" description="Élargissez vos filtres." icon={cfg.icon} />
+        <Empty title={t('Aucun résultat')} description={t('Élargissez vos filtres.')} icon={cfg.icon} />
       )}
 
       <PagePagination meta={meta} onChange={(page) => setFilters((f) => ({ ...f, page }))} />

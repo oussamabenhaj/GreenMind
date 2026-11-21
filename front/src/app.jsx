@@ -1,16 +1,12 @@
 import 'src/global.css';
-import 'dayjs/locale/fr';
 
 import { useEffect } from 'react';
-
-import { frFR } from '@mui/x-date-pickers/locales';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { usePathname } from 'src/routes/hooks';
 
 import { SocketProvider } from 'src/lib/socket';
 import { themeConfig, ThemeProvider } from 'src/theme';
+import { LanguageSync, LanguageScope } from 'src/locales';
 
 import { ProgressBar } from 'src/components/progress-bar';
 import { MotionLazy } from 'src/components/animate/motion-lazy';
@@ -25,13 +21,9 @@ export default function App({ children }) {
   useScrollToTop();
 
   return (
-    <LocalizationProvider
-      dateAdapter={AdapterDayjs}
-      adapterLocale="fr"
-      localeText={frFR.components.MuiLocalizationProvider.defaultProps.localeText}
-    >
     <AuthProvider>
       <SettingsProvider defaultSettings={defaultSettings}>
+        <LanguageSync />
         <ThemeProvider
           noSsr
           defaultMode={themeConfig.defaultMode}
@@ -40,14 +32,15 @@ export default function App({ children }) {
           <MotionLazy>
             <RealtimeBridge>
               <ProgressBar />
-              <SettingsDrawer defaultSettings={defaultSettings} />
-              {children}
+              <LanguageScope>
+                <SettingsDrawer defaultSettings={defaultSettings} />
+                {children}
+              </LanguageScope>
             </RealtimeBridge>
           </MotionLazy>
         </ThemeProvider>
       </SettingsProvider>
     </AuthProvider>
-    </LocalizationProvider>
   );
 }
 

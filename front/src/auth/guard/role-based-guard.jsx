@@ -1,18 +1,20 @@
 import { m } from 'framer-motion';
+import { Navigate } from 'react-router';
 
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 
+import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
 
+import { t } from 'src/locales/i18n';
 import { ForbiddenIllustration } from 'src/assets/illustrations';
 
 import { varBounce, MotionContainer } from 'src/components/animate';
 
 import { useAuthContext } from '../hooks';
 import { homeForRole } from './guest-guard';
-
 // ----------------------------------------------------------------------
 
 /**
@@ -23,6 +25,8 @@ export function RoleBasedGuard({ sx, children, hasContent = true, currentRole, a
   const role = currentRole ?? user?.role;
 
   if (typeof acceptRoles !== 'undefined' && !acceptRoles.includes(role)) {
+    // Known role in the wrong space → go straight to that role's home page.
+    if (role && homeForRole(role) !== paths.comingSoon) return <Navigate to={homeForRole(role)} replace />;
     return hasContent ? (
       <Container
         component={MotionContainer}
@@ -30,13 +34,13 @@ export function RoleBasedGuard({ sx, children, hasContent = true, currentRole, a
       >
         <m.div variants={varBounce('in')}>
           <Typography variant="h3" sx={{ mb: 2 }}>
-            Accès réservé
+            {t('Accès réservé')}
           </Typography>
         </m.div>
 
         <m.div variants={varBounce('in')}>
           <Typography sx={{ color: 'text.secondary' }}>
-            Cet espace est réservé à un autre type de compte. Votre rôle actuel ne permet pas d’y accéder.
+            {t('Cet espace est réservé à un autre type de compte. Votre rôle actuel ne permet pas d’y accéder.')}
           </Typography>
         </m.div>
 
@@ -45,7 +49,7 @@ export function RoleBasedGuard({ sx, children, hasContent = true, currentRole, a
         </m.div>
 
         <Button component={RouterLink} href={homeForRole(role)} variant="contained" size="large">
-          Retour à mon espace
+          {t('Retour à mon espace')}
         </Button>
       </Container>
     ) : null;

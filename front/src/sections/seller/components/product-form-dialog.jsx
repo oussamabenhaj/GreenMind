@@ -20,19 +20,20 @@ import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
-import { fQty, UNITS } from 'src/utils/clac';
+import { fQty, UNITS, unitLabel } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import axios, { endpoints } from 'src/lib/axios';
 
 import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
+import { TranslationNotice } from 'src/components/clac/translation-notice';
 
 import { useAuthContext } from 'src/auth/hooks';
 
 import { useReferenceData } from './ui';
 import { ImageUploader } from './image-uploader';
 import { LocationPicker } from './location-picker';
-
 // ----------------------------------------------------------------------
 
 const optionalNumber = zod.union([zod.literal(''), zod.coerce.number().min(0)]).optional();
@@ -197,9 +198,9 @@ export function ProductFormDialog({ open, onClose, product, onSaved }) {
             <Iconify icon="solar:box-bold-duotone" width={26} />
           </Box>
           <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h6">{product ? 'Modifier le produit' : 'Publier une nouvelle matière'}</Typography>
+            <Typography variant="h6">{product ? t('Modifier le produit') : t('Publier une nouvelle matière')}</Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              Les acheteurs intéressés par la catégorie sont notifiés en temps réel.
+              {t('Les acheteurs intéressés par la catégorie sont notifiés en temps réel.')}
             </Typography>
           </Box>
 
@@ -228,10 +229,10 @@ export function ProductFormDialog({ open, onClose, product, onSaved }) {
                 <Iconify icon={field.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} sx={{ color: field.value ? 'success.dark' : 'text.disabled' }} />
                 <Box>
                   <Typography variant="subtitle2" sx={{ color: field.value ? 'success.darker' : 'text.secondary', lineHeight: 1.2 }}>
-                    {field.value ? 'Visible sur le marché' : 'Masqué'}
+                    {field.value ? t('Visible sur le marché') : t('Masqué')}
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.disabled', display: { xs: 'none', sm: 'block' }, lineHeight: 1.2 }}>
-                    {field.value ? 'Les acheteurs le voient' : 'Brouillon privé'}
+                    {field.value ? t('Les acheteurs le voient') : t('Brouillon privé')}
                   </Typography>
                 </Box>
                 <Switch checked={field.value} color="success" onClick={(e) => e.stopPropagation()} onChange={(e) => field.onChange(e.target.checked)} />
@@ -244,6 +245,7 @@ export function ProductFormDialog({ open, onClose, product, onSaved }) {
         </DialogTitle>
 
         <DialogContent sx={{ bgcolor: 'background.neutral', pt: '20px !important' }}>
+        <TranslationNotice item={product} fields={['title', 'description']} />
           {!!error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -253,32 +255,32 @@ export function ProductFormDialog({ open, onClose, product, onSaved }) {
           <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: '1fr', md: '1.1fr 1fr' }, alignItems: 'start' }}>
             {/* ---------- left column ---------- */}
             <Stack spacing={2.5}>
-              <Section icon="solar:document-text-bold-duotone" title="Informations">
+              <Section icon="solar:document-text-bold-duotone" title={t('Informations')}>
                 <Stack spacing={2}>
-                  <Field.Text name="title" label="Titre" placeholder="Ex : Grignons d’olive frais — campagne 2026" />
+                  <Field.Text name="title" label={t('Titre')} placeholder={t('Ex : Grignons d’olive frais — campagne 2026')} />
                   <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: '1fr 1fr' }}>
-                    <Field.Select name="category_id" label="Catégorie" options={categories.map((c) => ({ value: c.id, label: c.name }))} />
-                    <Field.Select name="market_id" label="Marché" options={[{ value: '', label: 'Aucun' }, ...markets.map((mk) => ({ value: mk.id, label: mk.name }))]} />
+                    <Field.Select name="category_id" label={t('Catégorie')} options={categories.map((c) => ({ value: c.id, label: c.name }))} />
+                    <Field.Select name="market_id" label={t('Marché')} options={[{ value: '', label: t('Aucun') }, ...markets.map((mk) => ({ value: mk.id, label: mk.name }))]} />
                   </Box>
-                  <Field.Text name="description" label="Description" multiline rows={3} placeholder="État, humidité, conditionnement, fréquence de disponibilité…" />
+                  <Field.Text name="description" label={t('Description')} multiline rows={3} placeholder={t('État, humidité, conditionnement, fréquence de disponibilité…')} />
                 </Stack>
               </Section>
 
-              <Section icon="solar:wallet-money-bold-duotone" title="Quantité & prix">
+              <Section icon="solar:wallet-money-bold-duotone" title={t('Quantité & prix')}>
                 <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: '1fr 1fr' }}>
                   <Field.Text
                     name="quantity_available"
-                    label="Quantité disponible"
+                    label={t('Quantité disponible')}
                     type="number"
-                    slotProps={{ input: { endAdornment: <InputAdornment position="end">{values.unit}</InputAdornment> } }}
+                    slotProps={{ input: { endAdornment: <InputAdornment position="end">{unitLabel(values.unit)}</InputAdornment> } }}
                   />
-                  <Field.Select name="unit" label="Unité" options={UNITS} />
+                  <Field.Select name="unit" label={t('Unité')} options={UNITS.map((u) => ({ ...u, label: t(u.label) }))} />
                   <Field.Text
                     name="price_per_unit"
-                    label="Prix / unité"
+                    label={t('Prix / unité')}
                     type="number"
                     inputProps={{ step: '0.001' }}
-                    slotProps={{ input: { endAdornment: <InputAdornment position="end">TND</InputAdornment> } }}
+                    slotProps={{ input: { endAdornment: <InputAdornment position="end">{t('TND')}</InputAdornment> } }}
                   />
                 </Box>
                 <Controller
@@ -306,11 +308,11 @@ export function ProductFormDialog({ open, onClose, product, onSaved }) {
                         sx={{ color: field.value ? 'success.dark' : 'text.disabled' }}
                       />
                       <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="subtitle2">Remise quantité</Typography>
+                        <Typography variant="subtitle2">{t('Remise quantité')}</Typography>
                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                           {discountThreshold != null
-                            ? `-10 % dès ${fQty(discountThreshold, values.unit)} (plus de la moitié du stock), -15 % pour toute la quantité.`
-                            : 'Remise automatique sur les grosses commandes : -10 % au-delà de la moitié du stock, -15 % pour tout.'}
+                            ? t('-10 % dès {{qty}} (plus de la moitié du stock), -15 % pour toute la quantité.', { qty: fQty(discountThreshold, values.unit) })
+                            : t('Remise automatique sur les grosses commandes : -10 % au-delà de la moitié du stock, -15 % pour tout.')}
                         </Typography>
                       </Box>
                       <Switch
@@ -318,21 +320,21 @@ export function ProductFormDialog({ open, onClose, product, onSaved }) {
                         color="success"
                         onClick={(e) => e.stopPropagation()}
                         onChange={(e) => field.onChange(e.target.checked)}
-                        inputProps={{ 'aria-label': 'Activer la remise quantité' }}
+                        inputProps={{ 'aria-label': t('Activer la remise quantité') }}
                       />
                     </Stack>
                   )}
                 />
               </Section>
 
-              <Section icon="solar:calendar-bold-duotone" title="Disponibilité" subtitle="Période pendant laquelle la matière peut être enlevée">
+              <Section icon="solar:calendar-bold-duotone" title={t('Disponibilité')} subtitle={t('Période pendant laquelle la matière peut être enlevée')}>
                 <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
                   <Controller
                     name="available_from"
                     control={control}
                     render={({ field }) => (
                       <DatePicker
-                        label="Disponible à partir du"
+                        label={t('Disponible à partir du')}
                         value={field.value}
                         onChange={field.onChange}
                         format="DD MMM YYYY"
@@ -345,17 +347,17 @@ export function ProductFormDialog({ open, onClose, product, onSaved }) {
                     control={control}
                     render={({ field }) => (
                       <DatePicker
-                        label="Disponible jusqu’au"
+                        label={t('Disponible jusqu’au')}
                         value={field.value}
                         onChange={field.onChange}
                         format="DD MMM YYYY"
                         disablePast
                         minDate={values.available_from ?? undefined}
                         slotProps={{
-                          textField: { fullWidth: true, error: !!errors.available_until, helperText: errors.available_until?.message },
+                          textField: { fullWidth: true, error: !!errors.available_until, helperText: t(errors.available_until?.message) },
                           field: { clearable: true },
                           shortcuts: {
-                            items: SHORTCUTS,
+                            items: SHORTCUTS.map((s) => ({ ...s, label: t(s.label) })),
                             changeImportance: 'accept',
                             sx: { '& .MuiChip-root': { bgcolor: 'primary.lighter', color: 'primary.darker', fontWeight: 600, '&:hover': { bgcolor: 'primary.light', color: 'common.white' } } },
                           },
@@ -368,7 +370,7 @@ export function ProductFormDialog({ open, onClose, product, onSaved }) {
                 </Box>
                 {values.available_until && (
                   <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
-                    ⏳ Visible encore {Math.max(dayjs(values.available_until).diff(dayjs(), 'day'), 0)} jour(s)
+                    {t('⏳ Visible encore')} {Math.max(dayjs(values.available_until).diff(dayjs(), 'day'), 0)} {t('jour(s)')}
                   </Typography>
                 )}
               </Section>
@@ -376,7 +378,7 @@ export function ProductFormDialog({ open, onClose, product, onSaved }) {
 
             {/* ---------- right column ---------- */}
             <Stack spacing={2.5}>
-              <Section icon="solar:gallery-bold-duotone" title="Photos" subtitle="Jusqu’à 3 images — stockées sur le serveur CLAC">
+              <Section icon="solar:gallery-bold-duotone" title={t('Photos')} subtitle={t('Jusqu’à 3 images — stockées sur le serveur CLAC')}>
                 <ImageUploader
                   value={values.images}
                   max={3}
@@ -385,14 +387,14 @@ export function ProductFormDialog({ open, onClose, product, onSaved }) {
                 />
               </Section>
 
-              <Section icon="solar:map-point-wave-bold-duotone" title="Localisation" subtitle="Recherchez une adresse ou cliquez sur la carte">
+              <Section icon="solar:map-point-wave-bold-duotone" title={t('Localisation')} subtitle={t('Recherchez une adresse ou cliquez sur la carte')}>
                 <LocationPicker
                   value={{ lat: values.lat, lng: values.lng, address: values.address, gouvernorat: values.gouvernorat }}
                   onChange={(patch) => Object.entries(patch).forEach(([k, val]) => val !== undefined && setValue(k, val, { shouldValidate: k === 'gouvernorat' }))}
                 />
                 {errors.gouvernorat && (
                   <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1 }}>
-                    {errors.gouvernorat.message}
+                    {t(errors.gouvernorat.message)}
                   </Typography>
                 )}
               </Section>
@@ -402,10 +404,10 @@ export function ProductFormDialog({ open, onClose, product, onSaved }) {
 
         <DialogActions sx={{ px: 3, py: 2 }}>
           <Button variant="outlined" color="inherit" onClick={cancel}>
-            Annuler
+            {t('Annuler')}
           </Button>
           <LoadingButton type="submit" size="large" variant="contained" loading={isSubmitting} startIcon={<Iconify icon="solar:check-circle-bold" />}>
-            {product ? 'Enregistrer' : 'Publier'}
+            {product ? t('Enregistrer') : t('Publier')}
           </LoadingButton>
         </DialogActions>
       </Form>

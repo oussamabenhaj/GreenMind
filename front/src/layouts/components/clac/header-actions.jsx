@@ -23,15 +23,17 @@ import { useSpace } from 'src/hooks/use-space';
 
 import { initials, ROLE_LABELS } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
 import { useSocket } from 'src/lib/socket';
 import axios, { endpoints } from 'src/lib/axios';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
+import { SmartSearch } from 'src/sections/seller/marketplace/smart-search';
+
 import { useAuthContext } from 'src/auth/hooks';
 import { signOut } from 'src/auth/context/jwt/action';
-
 // ----------------------------------------------------------------------
 
 export function ChatButton() {
@@ -39,7 +41,7 @@ export function ChatButton() {
   const sp = useSpace();
   const { counters } = useSocket();
   return (
-    <Tooltip title="Messagerie">
+    <Tooltip title={t('Messagerie')}>
       <IconButton onClick={() => router.push(sp.chat)}>
         <Badge badgeContent={counters.messages} color="primary" max={99}>
           <Iconify icon="solar:chat-round-dots-bold-duotone" width={24} />
@@ -52,7 +54,7 @@ export function ChatButton() {
 export function LiveIndicator() {
   const { connected } = useSocket();
   return (
-    <Tooltip title={connected ? 'Temps réel connecté' : 'Temps réel déconnecté'}>
+    <Tooltip title={connected ? t('Temps réel connecté') : t('Temps réel déconnecté')}>
       <Box
         sx={{
           width: 10,
@@ -104,7 +106,7 @@ export function QuickSearch() {
       setResults(null);
       return undefined;
     }
-    const t = setTimeout(async () => {
+    const tt = setTimeout(async () => {
       setLoading(true);
       try {
         const res = await axios.get(endpoints.search.quick, { params: { q, limit: 4 } });
@@ -113,7 +115,7 @@ export function QuickSearch() {
         setLoading(false);
       }
     }, 250);
-    return () => clearTimeout(t);
+    return () => clearTimeout(tt);
   }, [q]);
 
   const go = (item) => {
@@ -152,9 +154,9 @@ export function QuickSearch() {
       >
         <Iconify icon="eva:search-fill" />
         <Typography variant="body2" sx={{ flexGrow: 1 }}>
-          Rechercher…
+          {t('Rechercher…')}
         </Typography>
-        <Label sx={{ fontSize: 11 }}>Ctrl K</Label>
+        <Label sx={{ fontSize: 11 }}>{t('Ctrl K')}</Label>
       </Box>
       <IconButton onClick={() => setOpen(true)} sx={{ display: { md: 'none' } }}>
         <Iconify icon="eva:search-fill" />
@@ -166,7 +168,7 @@ export function QuickSearch() {
           fullWidth
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Produits, acheteurs, offres, demandes…"
+          placeholder={t('Produits, acheteurs, offres, demandes…')}
           variant="standard"
           sx={{ p: 2.5, borderBottom: 1, borderColor: 'divider' }}
           slotProps={{
@@ -184,23 +186,23 @@ export function QuickSearch() {
         <Box sx={{ maxHeight: 420, overflow: 'auto', p: 1 }}>
           {!groups.length && (
             <Typography variant="body2" sx={{ p: 3, color: 'text.secondary', textAlign: 'center' }}>
-              {q.length < 2 ? 'Tapez au moins 2 caractères' : 'Aucun résultat'}
+              {q.length < 2 ? t('Tapez au moins 2 caractères') : t('Aucun résultat')}
             </Typography>
           )}
           {groups.map(([type, rows]) => (
             <Box key={type} sx={{ mb: 1 }}>
               <Typography variant="overline" sx={{ px: 1.5, color: 'text.disabled' }}>
-                {TYPE_META[type]?.label}
+                {t(TYPE_META[type]?.label)}
               </Typography>
               {rows.map((item) => (
                 <ListItemButton key={item.id} onClick={() => go(item)} sx={{ borderRadius: 1, gap: 1.5 }}>
                   <Iconify icon={TYPE_META[type]?.icon} sx={{ color: 'primary.main' }} />
                   <Box sx={{ minWidth: 0 }}>
                     <Typography variant="subtitle2" noWrap>
-                      {item.label}
+                      {t(item.label)}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>
-                      {[item.subtitle, item.gouvernorat].filter(Boolean).join(' · ')}
+                      {[item.subtitle, t(item.gouvernorat)].filter(Boolean).join(' · ')}
                     </Typography>
                   </Box>
                 </ListItemButton>
@@ -214,6 +216,39 @@ export function QuickSearch() {
 }
 
 // ----------------------------------------------------------------------
+
+/** "Recherche IA" in the top bar: natural-language search in a large dialog. */
+export function AiSearchButton() {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  // close when a result navigates to another page
+  useEffect(() => setOpen(false), [pathname]);
+
+  return (
+    <>
+      <Button
+        onClick={() => setOpen(true)}
+        variant="soft"
+        color="secondary"
+        startIcon={<Iconify icon="solar:magic-stick-3-bold-duotone" />}
+        sx={{ ml: { xs: 1, md: 1.5 }, borderRadius: 1.5, px: { xs: 1.25, md: 2 }, flexShrink: 0, '& .MuiButton-startIcon': { mr: { xs: 0, sm: 1 } } }}
+      >
+        <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+          {t('Recherche IA')}
+        </Box>
+      </Button>
+      <Dialog fullWidth maxWidth="lg" open={open} onClose={() => setOpen(false)} PaperProps={{ sx: { borderRadius: 2.5, bgcolor: 'background.default' } }}>
+        <Box sx={{ position: 'relative', p: { xs: 2, md: 3 } }}>
+          <IconButton onClick={() => setOpen(false)} sx={{ position: 'absolute', top: 12, right: 12, zIndex: 2 }}>
+            <Iconify icon="mingcute:close-line" />
+          </IconButton>
+          <SmartSearch />
+        </Box>
+      </Dialog>
+    </>
+  );
+}
 
 /** "Market" shortcut shown in the top bar, next to the search box. */
 export function MarketButton() {
@@ -229,7 +264,7 @@ export function MarketButton() {
       sx={{ ml: { xs: 1, md: 1.5 }, borderRadius: 1.5, px: { xs: 1.25, md: 2 }, flexShrink: 0, '& .MuiButton-startIcon': { mr: { xs: 0, sm: 1 } } }}
     >
       <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-        Market
+        {t('Market')}
       </Box>
     </Button>
   );
@@ -251,9 +286,9 @@ export function AccountMenu() {
   };
 
   const items = [
-    { label: 'Mon profil', icon: 'solar:user-id-bold-duotone', href: sp.profile },
-    ...(user?.role === 'seller' ? [{ label: 'Statistiques', icon: 'solar:chart-2-bold-duotone', href: sp.reports }] : []),
-    { label: 'Notifications', icon: 'solar:bell-bold-duotone', href: sp.notifications },
+    { label: t('Mon profil'), icon: 'solar:user-id-bold-duotone', href: sp.profile },
+    ...(user?.role === 'seller' ? [{ label: t('Statistiques'), icon: 'solar:chart-2-bold-duotone', href: sp.reports }] : []),
+    { label: t('Notifications'), icon: 'solar:bell-bold-duotone', href: sp.notifications },
   ];
 
   return (
@@ -287,10 +322,10 @@ export function AccountMenu() {
             {user?.email}
           </Typography>
           <Box sx={{ mt: 1, display: 'flex', gap: 0.5 }}>
-            <Label color="primary">{ROLE_LABELS[user?.role]}</Label>
+            <Label color="primary">{t(ROLE_LABELS[user?.role])}</Label>
             {user?.is_verified && (
               <Label color="success" startIcon={<Iconify icon="solar:verified-check-bold" />}>
-                Vérifié
+                {t('Vérifié')}
               </Label>
             )}
           </Box>
@@ -306,13 +341,13 @@ export function AccountMenu() {
             sx={{ gap: 1.5 }}
           >
             <Iconify icon={item.icon} />
-            {item.label}
+            {t(item.label)}
           </MenuItem>
         ))}
         <Divider sx={{ borderStyle: 'dashed', my: 0.5 }} />
         <MenuItem onClick={handleLogout} sx={{ gap: 1.5, color: 'error.main' }}>
           <Iconify icon="solar:logout-2-bold-duotone" />
-          Se déconnecter
+          {t('Se déconnecter')}
         </MenuItem>
       </Popover>
     </>
@@ -340,9 +375,9 @@ export function NavEcoCard() {
         width={96}
         sx={{ position: 'absolute', right: -18, bottom: -18, opacity: 0.2 }}
       />
-      <Typography variant="subtitle2">Chaque déchet a une valeur 🌱</Typography>
+      <Typography variant="subtitle2">{t('Chaque déchet a une valeur 🌱')}</Typography>
       <Typography variant="caption" sx={{ opacity: 0.85, display: 'block', mt: 0.5 }}>
-        Publiez vos matières, répondez aux demandes et donnez une seconde vie à vos ressources.
+        {t('Publiez vos matières, répondez aux demandes et donnez une seconde vie à vos ressources.')}
       </Typography>
     </Box>
   );

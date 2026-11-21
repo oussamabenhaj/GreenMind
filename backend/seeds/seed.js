@@ -4,6 +4,13 @@
  * market-consistent prices, 12 months of purchase history, stock computed from
  * movements, requests/responses, offers, discounts, posts, chats, notifications.
  * Business names are fictional. Run after `npm run migrate`:  npm run seed
+ *
+ * Bilingual: every translatable text is stored with its Arabic version in the
+ * `i18n` JSONB column ({ field: { fr, ar } }) — translations live in seeds/ar.js.
+ * Establishments cover the Tunisian food chain: olive mills, hotels, restaurants
+ * (lablabi, couscous), bakeries, pâtisseries, cafés, coffee roasters, tomato
+ * canning (Cap Bon), dairy (Mateur), orange-blossom distillery (Nabeul), harissa,
+ * fish market (Sfax), semolina mill — and the recyclers/buyers of their waste.
  */
 import fs from 'fs';
 import path from 'path';
@@ -12,6 +19,7 @@ import bcrypt from 'bcryptjs';
 import pool, { transaction } from '../src/config/db.js';
 import { env } from '../src/config/env.js';
 import { describeDbError } from '../src/config/db-error.js';
+import { AR, pointDescriptionAr } from './ar.js';
 
 if (env.isProduction) {
   console.error('Refusing to seed a production database.');
@@ -30,6 +38,16 @@ const ahead = (days) => new Date(Date.now() + days * DAY);
 const isoDay = (d) => d.toISOString().slice(0, 10);
 
 const PASSWORD = 'Clac2026!';
+
+// ---------------------------------------------------------------- i18n
+const missingAr = new Set();
+const bi = (fr) => {
+  if (fr == null) return null;
+  if (AR[fr] === undefined) missingAr.add(fr);
+  return { fr, ar: AR[fr] ?? null };
+};
+/** `{ title: 'Grignons…', description: '…' }` → JSON for the i18n column. */
+const i18n = (fields) => JSON.stringify(Object.fromEntries(Object.entries(fields).filter(([, v]) => v != null).map(([k, v]) => [k, bi(v)])));
 
 // ---------------------------------------------------------------- demo images
 // Photos live in the web app's public folder (front/public/demo), so the stored URLs stay
@@ -71,6 +89,19 @@ const SELLERS = [
   ['ksar', 'production@ksarhellal-textile.tn', 'Najet Khelifi', 'Confection Ksar Hellal', 'Monastir', 'Zone industrielle, Ksar Hellal', 35.6460, 10.8906, ['textile'], '+216 73 475 640', 'Atelier jean & coton — 6 t de chutes par mois.'],
   ['djerba', 'eco@djerba-palace.tn', 'Walid Ben Youssef', 'Djerba Palace Resort', 'Medenine', 'Zone touristique, Midoun', 33.8085, 10.9940, ['used-cooking-oil', 'glass', 'organic-waste'], '+216 75 731 200', 'Resort 4* engagé dans la démarche zéro déchet.'],
   ['douz', 'station.douz@clac.tn', 'Ali Ghodbane', 'Station Dattes Douz', 'Kebili', 'Route de Kebili, Douz', 33.4570, 9.0230, ['organic-waste'], '+216 75 470 118', 'Conditionnement de dattes Deglet Nour : écarts de tri et noyaux.'],
+  // food service & agrifood
+  ['ennour', 'boulangerie.ennour@clac.tn', 'Moez Hammami', 'Boulangerie Ennour', 'Tunis', 'Rue Bab Souika, Tunis', 36.8045, 10.1690, ['bread-surplus'], '+216 71 562 330', 'Boulangerie de quartier : baguettes, tabouna et pain mlawi. 40 à 60 kg d’invendus par jour.'],
+  ['cafe', 'cafe.sidibou@clac.tn', 'Nabil Ayed', 'Café Panorama Sidi Bou Saïd', 'Tunis', 'Rue Habib Thameur, Sidi Bou Saïd', 36.8687, 10.3416, ['coffee-grounds', 'organic-waste'], '+216 71 740 112', 'Café traditionnel — express et café turc, ~25 kg de marc par jour en été.'],
+  ['torref', 'torrefaction.bensalem@clac.tn', 'Hichem Ben Salem', 'Torréfaction Ben Salem', 'Ariana', 'Zone industrielle, La Soukra', 36.8610, 10.2050, ['coffee-grounds', 'textile'], '+216 70 860 455', 'Torréfacteur depuis 1972 : pellicules de café et sacs de jute.'],
+  ['lablabi', 'resto.lablabi@clac.tn', 'Chokri Mabrouk', 'Restaurant Lablabi El Hafsia', 'Tunis', 'Souk El Hafsia, Médina de Tunis', 36.8000, 10.1720, ['used-cooking-oil', 'organic-waste', 'bread-surplus'], '+216 71 563 908', 'Lablabi, kafteji et fricassé : huile de friture, pain rassis et épluchures.'],
+  ['couscous', 'resto.couscous.sfax@clac.tn', 'Saloua Feki', 'Restaurant Dar Couscous Sfax', 'Sfax', 'Avenue Hedi Chaker, Sfax', 34.7400, 10.7600, ['organic-waste', 'used-cooking-oil'], '+216 74 225 610', 'Couscous au poisson, mloukhia, ojja : 300 couverts par jour.'],
+  ['patisserie', 'patisserie.yasmine@clac.tn', 'Amel Chtioui', 'Pâtisserie Yasmine', 'Sousse', 'Boulevard du 14 Janvier, Sousse', 35.8350, 10.6300, ['bread-surplus', 'organic-waste', 'paper-cardboard'], '+216 73 228 140', 'Baklawa, makroudh et kaak warka : invendus, coquilles d’œufs et cartons.'],
+  ['tomate', 'qualite@conserverie-korba.tn', 'Kamel Bouraoui', 'Conserverie Cap Bon Tomate', 'Nabeul', 'Zone industrielle, Korba', 36.5780, 10.8580, ['agrifood-byproducts', 'metal'], '+216 72 389 700', 'Concentré de tomate double : 900 t de pelures et pépins par saison (juillet–septembre).'],
+  ['laiterie', 'environnement@laiterie-mateur.tn', 'Sami Jelassi', 'Laiterie du Nord', 'Bizerte', 'Route de Béja, Mateur', 37.0400, 9.6650, ['agrifood-byproducts', 'plastic'], '+216 72 468 300', 'Fromages et lben : 15 000 L de lactosérum par jour.'],
+  ['zahr', 'distillerie.zahr@clac.tn', 'Hayet Ben Romdhane', 'Distillerie Zahr Nabeul', 'Nabeul', 'Route de Dar Chaabane, Nabeul', 36.4600, 10.7300, ['agrifood-byproducts', 'organic-waste'], '+216 72 271 515', 'Eau de fleur d’oranger (zhar) et néroli : résidus de distillation et écorces de bigarade.'],
+  ['harissa', 'production@harissa-cap-bon.tn', 'Lotfi Gharsalli', 'Harissa du Cap Bon', 'Nabeul', 'Zone industrielle, Menzel Temime', 36.7800, 10.9850, ['agrifood-byproducts'], '+216 72 344 020', 'Harissa traditionnelle : queues, pépins et piments déclassés.'],
+  ['poisson', 'marche.poisson.sfax@clac.tn', 'Habib Elloumi', 'Mareyeurs du Port de Sfax', 'Sfax', 'Port de pêche, Sfax', 34.7300, 10.7700, ['agrifood-byproducts', 'plastic'], '+216 74 497 260', 'Mareyage sardine, poulpe et daurade : têtes, arêtes et viscères triés chaque matin.'],
+  ['semoulerie', 'achats@semoulerie-sfax.tn', 'Riadh Kammoun', 'Semoulerie Ezzitouna', 'Sfax', 'Route de Mahdia km 4, Sfax', 34.7650, 10.7850, ['agrifood-byproducts', 'paper-cardboard'], '+216 74 655 880', 'Semoule et couscous : son de blé et remoulage en sacs de 40 kg.'],
 ];
 
 const BUYERS = [
@@ -82,11 +113,15 @@ const BUYERS = [
   ['fonderie', 'ferraille@fonderie-gabes.tn', 'Bechir Jlassi', 'Fonderie du Sud', 'Gabes', 'Zone industrielle, Gabès', 33.8815, 10.0982, ['metal'], '+216 75 270 330', 'Fonderie acier & aluminium — achat ferraille triée.'],
   ['savonnerie', 'contact@savon-nabeul.tn', 'Mariem Zouari', 'Savonnerie Artisanale de Nabeul', 'Nabeul', 'Rue Farhat Hached, Nabeul', 36.4513, 10.7357, ['used-cooking-oil'], '+216 72 286 410', 'Savons artisanaux à base d’huiles recyclées.'],
   ['effilochage', 'achat@effilochage-sahel.tn', 'Anis Belhadj', 'Effilochage Textile Sahel', 'Sousse', 'Zone industrielle, Sidi Abdelhamid', 35.8030, 10.6250, ['textile'], '+216 73 323 700', 'Effilochage de chutes textiles pour isolants et rembourrage.'],
+  ['elevage', 'ferme.mornag@clac.tn', 'Adel Sassi', 'Ferme Laitière Mornag', 'Ben Arous', 'Route de Mornag', 36.6800, 10.2900, ['bread-surplus', 'agrifood-byproducts'], '+216 71 360 215', 'Élevage de 250 vaches laitières : pain sec, son et lactosérum pour l’alimentation.'],
+  ['champignon', 'pleurotes.zaghouan@clac.tn', 'Wided Mejri', 'Champignonnière de Zaghouan', 'Zaghouan', 'Zriba, Zaghouan', 36.3700, 10.1400, ['coffee-grounds', 'agrifood-byproducts'], '+216 72 680 044', 'Culture de pleurotes sur marc de café et paille.'],
+  ['aliment', 'appro@aliment-betail-sahel.tn', 'Fathi Ben Amor', 'Aliments Bétail Sahel', 'Monastir', 'Zone industrielle, Moknine', 35.6300, 10.9000, ['bread-surplus', 'agrifood-byproducts', 'olive-pomace'], '+216 73 435 900', 'Fabricant d’aliments composés : achat de pain sec, son et coproduits.'],
+  ['farinepoisson', 'achat@farine-poisson-mahdia.tn', 'Mounir Ghariani', 'Farine de Poisson Mahdia', 'Mahdia', 'Port de Mahdia', 35.5020, 11.0700, ['agrifood-byproducts'], '+216 73 681 377', 'Production de farine et huile de poisson pour l’aquaculture.'],
 ];
 
 const COLLECTORS = [
-  ['pointvert', 'collecte.sfax@clac.tn', 'Rania Masmoudi', 'Point Vert Sfax', 'Sfax', 'Zone Poudrière 2, Sfax', 34.7520, 10.7350, ['olive-pomace', 'plastic', 'paper-cardboard', 'metal'], '+216 74 297 600', 'Réseau de collecte sfaxien agréé ANGed.'],
-  ['ecotunis', 'grandtunis@eco-collecte.tn', 'Sami Bouaziz', 'Éco-Collecte Grand Tunis', 'Tunis', 'Rue de l’Industrie, Charguia 1', 36.8380, 10.2050, ['used-cooking-oil', 'paper-cardboard', 'plastic', 'metal'], '+216 71 771 300', 'Collecte multi-matériaux pour hôtels, restaurants et commerces.'],
+  ['pointvert', 'collecte.sfax@clac.tn', 'Rania Masmoudi', 'Point Vert Sfax', 'Sfax', 'Zone Poudrière 2, Sfax', 34.7520, 10.7350, ['olive-pomace', 'plastic', 'paper-cardboard', 'metal', 'agrifood-byproducts'], '+216 74 297 600', 'Réseau de collecte sfaxien agréé ANGed.'],
+  ['ecotunis', 'grandtunis@eco-collecte.tn', 'Sami Bouaziz', 'Éco-Collecte Grand Tunis', 'Tunis', 'Rue de l’Industrie, Charguia 1', 36.8380, 10.2050, ['used-cooking-oil', 'paper-cardboard', 'plastic', 'metal', 'coffee-grounds', 'bread-surplus'], '+216 71 771 300', 'Collecte multi-matériaux pour hôtels, restaurants et commerces.'],
   ['sahelrec', 'contact@sahel-recyclage.tn', 'Imen Ben Ammar', 'Sahel Recyclage', 'Sousse', 'Route de Monastir, Sousse', 35.8100, 10.6300, ['plastic', 'paper-cardboard', 'textile', 'glass'], '+216 73 220 870', 'Tri et conditionnement — Sousse & Monastir.'],
   ['djerbapropre', 'djerba.propre@clac.tn', 'Hamza Ouerghi', 'Djerba Propre', 'Medenine', 'Route de Midoun, Houmt Souk', 33.8700, 10.8560, ['used-cooking-oil', 'glass', 'plastic'], '+216 75 650 090', 'Association de collecte sélective de l’île de Djerba.'],
 ];
@@ -98,9 +133,9 @@ const PENDING_USERS = [
 
 // [collector, name, gouvernorat, address, lat, lng, capacity_kg, categories, verified, schedule]
 const POINTS = [
-  ['pointvert', 'Point Vert — Poudrière', 'Sfax', 'Zone Poudrière 2, Sfax', 34.7520, 10.7350, 120000, ['olive-pomace', 'plastic', 'paper-cardboard', 'metal'], true, 'weekdays_sat'],
+  ['pointvert', 'Point Vert — Poudrière', 'Sfax', 'Zone Poudrière 2, Sfax', 34.7520, 10.7350, 120000, ['olive-pomace', 'plastic', 'paper-cardboard', 'metal', 'agrifood-byproducts'], true, 'weekdays_sat'],
   ['pointvert', 'Point Vert — Thyna', 'Sfax', 'Route de Gabès km 7, Thyna', 34.6890, 10.7060, 60000, ['olive-pomace', 'paper-cardboard'], true, 'weekdays'],
-  ['ecotunis', 'Éco-Collecte Charguia', 'Ariana', 'Charguia 1, Tunis-Carthage', 36.8380, 10.2050, 80000, ['used-cooking-oil', 'paper-cardboard', 'plastic'], true, 'weekdays_sat'],
+  ['ecotunis', 'Éco-Collecte Charguia', 'Ariana', 'Charguia 1, Tunis-Carthage', 36.8380, 10.2050, 80000, ['used-cooking-oil', 'paper-cardboard', 'plastic', 'coffee-grounds', 'bread-surplus'], true, 'weekdays_sat'],
   ['ecotunis', 'Éco-Collecte Ben Arous', 'Ben Arous', 'Zone industrielle, Ben Arous', 36.7480, 10.2280, 70000, ['metal', 'paper-cardboard', 'plastic'], true, 'weekdays'],
   ['ecotunis', 'Éco-Collecte La Marsa', 'Tunis', 'Avenue Taïeb Mhiri, La Marsa', 36.8782, 10.3247, 15000, ['used-cooking-oil', 'glass'], false, 'weekdays'],
   ['sahelrec', 'Sahel Recyclage — Sidi Abdelhamid', 'Sousse', 'Zone industrielle Sidi Abdelhamid', 35.8030, 10.6290, 90000, ['plastic', 'paper-cardboard', 'textile'], true, 'weekdays_sat'],
@@ -138,6 +173,22 @@ const PRODUCTS = [
   ['djerba', 'glass', 'Verre blanc trié', 'Bouteilles de verre blanc sans bouchons.', 'kg', 8000, 0.09, 'local', 12, 28],
   ['douz', 'organic-waste', 'Écarts de tri de dattes', 'Dattes déclassées (calibre, aspect) — alimentation animale ou compost.', 'kg', 35000, 0.15, 'national', 5, 99],
   ['douz', 'organic-waste', 'Noyaux de dattes', 'Noyaux séchés, pour torréfaction ou biomasse.', 'kg', 8000, 0.20, 'export', 5, 61],
+  // food service & agrifood (index 28+, no demo photo: the category cover is shown)
+  ['ennour', 'bread-surplus', 'Pain rassis — baguettes et tabouna', 'Invendus de la veille, séchés à l’air, en sacs de 25 kg. Idéal alimentation animale.', 'kg', 1500, 0.12, 'local', 12, 64],
+  ['lablabi', 'bread-surplus', 'Pain sec pour lablabi (surplus)', 'Pain rassis coupé, surplus non utilisé pour le lablabi, sacs de 20 kg.', 'kg', 600, 0.10, 'local', 12, 33],
+  ['lablabi', 'used-cooking-oil', 'Huile de friture — fricassé et kafteji', 'Huile de tournesol de friture filtrée, bidons de 20 L.', 'l', 400, 1.35, 'local', 12, 41],
+  ['cafe', 'coffee-grounds', 'Marc de café express', 'Marc de café 100 % arabica/robusta, collecté chaque soir, seaux de 15 kg.', 'kg', 700, 0.05, 'local', 12, 58],
+  ['torref', 'coffee-grounds', 'Pellicules de torréfaction', 'Pellicules (silver skin) légères, en big bags — paillage, compost ou combustible.', 'kg', 1200, 0.04, 'national', 12, 27],
+  ['torref', 'textile', 'Sacs de jute de café vides', 'Sacs en jute 60 kg (origine Brésil, Éthiopie), réutilisables ou pour l’artisanat.', 'unit', 2000, 0.80, 'national', 12, 49],
+  ['couscous', 'organic-waste', 'Épluchures et restes de cuisine', 'Épluchures de légumes (couscous, mloukhia, ojja) triées à la source, bacs de 120 L.', 'kg', 3000, 0.02, 'local', 12, 21],
+  ['patisserie', 'bread-surplus', 'Invendus de pâtisserie et kaak', 'Baklawa, makroudh et kaak warka invendus — pour élevage ou méthanisation.', 'kg', 400, 0.20, 'local', 12, 26],
+  ['patisserie', 'organic-waste', 'Coquilles d’œufs', 'Coquilles d’œufs séchées (≈ 300 kg/mois) — amendement calcique.', 'kg', 300, 0.05, 'local', 12, 18],
+  ['tomate', 'agrifood-byproducts', 'Pelures et pépins de tomate', 'Coproduit du concentré de tomate, frais ou séché. Disponible juillet–septembre.', 'kg', 250000, 0.03, 'national', 3, 112],
+  ['laiterie', 'agrifood-byproducts', 'Lactosérum (petit-lait) frais', 'Lactosérum doux de fromagerie, citerne de 10 000 L. Enlèvement quotidien.', 'l', 150000, 0.02, 'local', 12, 77],
+  ['zahr', 'agrifood-byproducts', 'Écorces de bigarade et résidus de distillation', 'Résidus de distillation de fleur d’oranger et écorces de bigaradier, mars–mai.', 'kg', 18000, 0.06, 'local', 3, 46],
+  ['harissa', 'agrifood-byproducts', 'Queues et pépins de piment', 'Queues, pépins et piments déclassés de la fabrication de harissa.', 'kg', 22000, 0.05, 'national', 4, 39],
+  ['poisson', 'agrifood-byproducts', 'Têtes et arêtes de sardine', 'Coproduits de mareyage sous glace, bacs de 50 kg, collecte avant 10 h.', 'kg', 9000, 0.18, 'local', 12, 84],
+  ['semoulerie', 'agrifood-byproducts', 'Son de blé dur', 'Son et remoulage de semoulerie en sacs de 40 kg.', 'kg', 60000, 0.45, 'national', 12, 131],
 ];
 
 // ---------------------------------------------------------------- seed
@@ -175,29 +226,31 @@ async function run(db) {
 
   // ---- products
   // Listings whose seller enabled the optional volume discount.
-  const QUANTITY_DISCOUNT_LISTINGS = new Set([0, 2, 6, 13, 17, 22, 26]);
+  const QUANTITY_DISCOUNT_LISTINGS = new Set([0, 2, 6, 13, 17, 22, 26, 37, 42]);
   const P = [];
   for (const [index, [seller, slug, title, description, unit, qty, price, mk, months, views]] of PRODUCTS.entries()) {
     const s = U[seller];
     const created = ago(round(between(20, 160)));
     // One photo per listing: front/public/demo/products/product-NN.jpg, in PRODUCTS order.
-    const image = `/demo/products/product-${String(index + 1).padStart(2, '0')}.jpg`;
+    const DEMO_PHOTOS = 28;
+    const images = index < DEMO_PHOTOS ? [`/demo/products/product-${String(index + 1).padStart(2, '0')}.jpg`] : [];
     const { rows } = await db.query(`
       INSERT INTO products (seller_id, category_id, market_id, title, description, images, unit, quantity_available, price_per_unit,
-        min_order_quantity, quantity_discount_enabled, gouvernorat, address, lat, lng, available_from, available_until, views_count, created_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING id
-    `, [s.id, cat[slug], market[mk], title, description, [image], unit, qty, price, null, QUANTITY_DISCOUNT_LISTINGS.has(index),
-      s.gov, s.address, s.lat, s.lng, isoDay(ago(30)), isoDay(ahead(months * 30)), views, created]);
+        min_order_quantity, quantity_discount_enabled, gouvernorat, address, lat, lng, available_from, available_until, views_count, created_at, i18n)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING id
+    `, [s.id, cat[slug], market[mk], title, description, images, unit, qty, price, null, QUANTITY_DISCOUNT_LISTINGS.has(index),
+      s.gov, s.address, s.lat, s.lng, isoDay(ago(30)), isoDay(ahead(months * 30)), views, created, i18n({ title, description })]);
     P.push({ id: rows[0].id, seller, slug, title, unit, price, qty });
   }
   // A withdrawn listing: the seller dashboard needs one inactive product to demonstrate.
   await db.query(`
     INSERT INTO products (seller_id, category_id, market_id, title, description, unit, quantity_available, price_per_unit,
-      min_order_quantity, gouvernorat, address, lat, lng, available_from, available_until, is_active, views_count, created_at)
-    VALUES ($1,$2,$3,$4,$5,'kg',0,0.24,NULL,$6,$7,$8,$9,$10,$11,false,64,$12)
+      min_order_quantity, gouvernorat, address, lat, lng, available_from, available_until, is_active, views_count, created_at, i18n)
+    VALUES ($1,$2,$3,$4,$5,'kg',0,0.24,NULL,$6,$7,$8,$9,$10,$11,false,64,$12,$13)
   `, [U.zitouna.id, cat['olive-pomace'], market.national, 'Noyaux d’olive concassés — lot 2025 épuisé',
     'Lot de la campagne précédente, entièrement vendu. Annonce désactivée en attendant la prochaine récolte.',
-    U.zitouna.gov, U.zitouna.address, U.zitouna.lat, U.zitouna.lng, isoDay(ago(300)), isoDay(ago(60)), ago(310)]);
+    U.zitouna.gov, U.zitouna.address, U.zitouna.lat, U.zitouna.lng, isoDay(ago(300)), isoDay(ago(60)), ago(310),
+    i18n({ title: 'Noyaux d’olive concassés — lot 2025 épuisé', description: 'Lot de la campagne précédente, entièrement vendu. Annonce désactivée en attendant la prochaine récolte.' })]);
   const productsOf = (slug) => P.filter((p) => p.slug === slug);
 
   // ---- posts
@@ -228,10 +281,11 @@ async function run(db) {
   for (const [owner, name, gov, address, lat, lng, capacity, cats, verified, sched] of POINTS) {
     const { rows } = await db.query(`
       INSERT INTO collection_points (manager_id, name, description, address, gouvernorat, lat, lng, phone, email,
-        storage_capacity_kg, category_ids, is_verified, created_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id
+        storage_capacity_kg, category_ids, is_verified, created_at, i18n)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id
     `, [U[owner].id, name, `Point de collecte ${U[owner].company} — pesée sur place, paiement sous 7 jours.`, address, gov, lat, lng,
-      COLLECTORS.find((c) => c[0] === owner)[9], COLLECTORS.find((c) => c[0] === owner)[1], capacity, cats.map((s) => cat[s]), verified, ago(between(120, 300))]);
+      COLLECTORS.find((c) => c[0] === owner)[9], COLLECTORS.find((c) => c[0] === owner)[1], capacity, cats.map((s) => cat[s]), verified, ago(between(120, 300)),
+      JSON.stringify({ name: bi(name), description: { fr: `Point de collecte ${U[owner].company} — pesée sur place, paiement sous 7 jours.`, ar: pointDescriptionAr(U[owner].company) } })]);
     const id = rows[0].id;
     const open = new Set(SCHEDULES[sched].map(([d]) => d));
     for (const [d, o, c] of SCHEDULES[sched]) {
@@ -247,8 +301,9 @@ async function run(db) {
   const LABELS = {
     'olive-pomace': 'Grignons d’olive', 'used-cooking-oil': 'Huiles usagées (converties en kg)', 'organic-waste': 'Biodéchets',
     plastic: 'Plastiques (PET/PEHD/PEBD)', 'paper-cardboard': 'Carton OCC', metal: 'Ferraille & métaux', glass: 'Calcin verre', textile: 'Chutes textiles',
+    'bread-surplus': 'Pain sec', 'coffee-grounds': 'Marc de café', 'agrifood-byproducts': 'Coproduits agroalimentaires',
   };
-  const QTY = { 'olive-pomace': [8000, 25000], 'used-cooking-oil': [400, 1500], plastic: [800, 4000], 'paper-cardboard': [1500, 6000], metal: [1500, 7000], glass: [800, 3000], textile: [500, 2500], 'organic-waste': [2000, 8000] };
+  const QTY = { 'olive-pomace': [8000, 25000], 'used-cooking-oil': [400, 1500], plastic: [800, 4000], 'paper-cardboard': [1500, 6000], metal: [1500, 7000], glass: [800, 3000], textile: [500, 2500], 'organic-waste': [2000, 8000], 'bread-surplus': [200, 1200], 'coffee-grounds': [150, 900], 'agrifood-byproducts': [2000, 12000] };
   const events = []; // { point, slug, date, qty (+in / -out), purchaseIdx, reason }
   const purchaseRows = [];
   for (const point of CP.filter((p) => p.verified)) {
@@ -260,7 +315,7 @@ async function run(db) {
       const days = i < 2 ? between(0.5, 6) : between(3, 360); // 2 recent ones awaiting action per point
       const status = days < 12 ? pick(['pending', 'confirmed', 'pending']) : rnd() < 0.9 ? 'received' : 'cancelled';
       const qty = round(between(...QTY[slug]), 50);
-      const unitPrice = product ? Number((product.price * (product.unit === 'l' ? 1.1 : 0.92)).toFixed(3)) : Number({ 'olive-pomace': 0.06, 'used-cooking-oil': 1.2, plastic: 0.55, 'paper-cardboard': 0.22, metal: 0.6, glass: 0.07, textile: 0.45, 'organic-waste': 0.02 }[slug].toFixed(3));
+      const unitPrice = product ? Number((product.price * (product.unit === 'l' ? 1.1 : 0.92)).toFixed(3)) : Number({ 'olive-pomace': 0.06, 'used-cooking-oil': 1.2, plastic: 0.55, 'paper-cardboard': 0.22, metal: 0.6, glass: 0.07, textile: 0.45, 'organic-waste': 0.02, 'bread-surplus': 0.1, 'coffee-grounds': 0.04, 'agrifood-byproducts': 0.08 }[slug].toFixed(3));
       const row = {
         point, slug, product, qty, unitPrice, status, created: ago(days), scheduled: ago(days - 2),
         label: product ? product.title : `${LABELS[slug]} — apport direct`,
@@ -307,9 +362,9 @@ async function run(db) {
   for (const point of CP) {
     for (const item of Object.values(point.items)) {
       const { rows } = await db.query(`
-        INSERT INTO stock_items (collection_point_id, category_id, label, quantity_kg, min_threshold_kg)
-        VALUES ($1,$2,$3,$4,$5) RETURNING id
-      `, [point.id, cat[item.slug], LABELS[item.slug], item.balance, round(point.capacity * 0.03, 100)]);
+        INSERT INTO stock_items (collection_point_id, category_id, label, quantity_kg, min_threshold_kg, i18n)
+        VALUES ($1,$2,$3,$4,$5,$6) RETURNING id
+      `, [point.id, cat[item.slug], LABELS[item.slug], item.balance, round(point.capacity * 0.03, 100), i18n({ label: LABELS[item.slug] })]);
       item.id = rows[0].id;
       for (const mv of item.moves) {
         await db.query(`
@@ -322,6 +377,7 @@ async function run(db) {
   }
 
   // ---- offers published by collection points
+  const OFFER_DESCRIPTION = 'Lot conditionné et pesé sur pont-bascule. Visite du lot possible sur rendez-vous.';
   const offerSpecs = [
     [0, 'olive-pomace', 'Lot de grignons secs — 40 t', 40000, 0.11, 4, 34, 'published', 'national'],
     [0, 'metal', 'Ferraille triée E40 — 12 t', 12000, 0.78, -3, 20, 'published', 'national'],
@@ -332,6 +388,7 @@ async function run(db) {
     [6, 'glass', 'Calcin verre trié — 10 t', 10000, 0.11, 15, 60, 'published', 'local'],
     [7, 'used-cooking-oil', 'Huiles usagées Djerba — saison été', 9000, 1.50, 120, 200, 'draft', 'local'],
     [5, 'plastic', 'Film PEBD en balles — 6 t', 6000, 0.62, -40, -10, 'closed', 'national'],
+    [2, 'coffee-grounds', 'Marc de café collecté — 2 t', 2000, 0.07, 3, 30, 'published', 'local'],
   ];
   const O = [];
   for (const [pi, slug, title, qty, price, start, end, status, mk] of offerSpecs) {
@@ -339,12 +396,13 @@ async function run(db) {
     const item = point.items[slug];
     const { rows } = await db.query(`
       INSERT INTO offers (publisher_id, collection_point_id, category_id, market_id, stock_item_id, title, description, quantity, unit,
-        price_per_unit, gouvernorat, lat, lng, starts_at, ends_at, status, published_at, created_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'kg',$9,$10,(SELECT lat FROM collection_points WHERE id=$2),(SELECT lng FROM collection_points WHERE id=$2),$11,$12,$13,$14,$15)
+        price_per_unit, gouvernorat, lat, lng, starts_at, ends_at, status, published_at, created_at, i18n)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'kg',$9,$10,(SELECT lat FROM collection_points WHERE id=$2),(SELECT lng FROM collection_points WHERE id=$2),$11,$12,$13,$14,$15,$16)
       RETURNING id
     `, [U[point.owner].id, point.id, cat[slug], market[mk], item?.id ?? null, title,
-      'Lot conditionné et pesé sur pont-bascule. Visite du lot possible sur rendez-vous.', qty, price, point.gov,
-      ahead(start), ahead(end), status, status === 'draft' ? null : ahead(Math.min(start, 0) - 2), ahead(Math.min(start, 0) - 3)]);
+      OFFER_DESCRIPTION, qty, price, point.gov,
+      ahead(start), ahead(end), status, status === 'draft' ? null : ahead(Math.min(start, 0) - 2), ahead(Math.min(start, 0) - 3),
+      i18n({ title, description: OFFER_DESCRIPTION })]);
     O.push(rows[0].id);
   }
 
@@ -368,6 +426,12 @@ async function run(db) {
     ['savonnerie', 'used-cooking-oil', 'Huile d’olive de friture — Dar El Jeld',
       'Demande adressée directement à Dar El Jeld : 200 L de son huile d’olive de friture pour notre atelier de savon de Nabeul.',
       200, 'l', 1.60, 14, 'open', 0.6, { product: 9, market: 'local' }],
+    // food service & agrifood
+    ['elevage', 'bread-surplus', 'Pain sec pour alimentation bovine — 3 t/mois', 'Pain rassis sans moisissure, en sacs. Enlèvement Grand Tunis.', 3000, 'kg', 0.15, 20, 'open', 1],
+    ['champignon', 'coffee-grounds', 'Marc de café pour culture de pleurotes', 'Marc frais (< 48 h), 500 kg par semaine. Enlèvement Tunis Nord.', 2000, 'kg', 0.06, 15, 'open', 2],
+    ['aliment', 'agrifood-byproducts', 'Son de blé et remoulage — 40 t', 'Pour aliment composé. Livraison Moknine.', 40000, 'kg', 0.48, 30, 'open', 3],
+    ['farinepoisson', 'agrifood-byproducts', 'Déchets de poisson frais', 'Têtes, arêtes et viscères sous glace. Mahdia, Sfax, Monastir.', 15000, 'kg', 0.20, 10, 'open', 0.8],
+    ['elevage', 'agrifood-byproducts', 'Lactosérum pour veaux', '2 000 L par semaine, citerne inox.', 8000, 'l', 0.03, 15, 'in_progress', 7],
   ];
   const R = [];
   for (const [buyer, slug, title, description, qty, unit, maxPrice, neededIn, status, daysAgo, extra = {}] of requestSpecs) {
@@ -375,10 +439,11 @@ async function run(db) {
     const product = extra.product != null ? P[extra.product] : null;
     const { rows } = await db.query(`
       INSERT INTO buy_requests (buyer_id, category_id, market_id, product_id, target_user_id, title, description, quantity, unit,
-        max_price_per_unit, gouvernorat, lat, lng, needed_by, status, created_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING id
+        max_price_per_unit, gouvernorat, lat, lng, needed_by, status, created_at, i18n)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id
     `, [b.id, cat[slug], extra.market ? market[extra.market] : null, product?.id ?? null, product ? U[product.seller].id : null,
-      title, description, qty, unit, maxPrice, b.gov, b.lat, b.lng, isoDay(ahead(neededIn - daysAgo)), status, ago(daysAgo)]);
+      title, description, qty, unit, maxPrice, b.gov, b.lat, b.lng, isoDay(ahead(neededIn - daysAgo)), status, ago(daysAgo),
+      i18n({ title, description })]);
     R.push({ id: rows[0].id, buyer, slug, status, qty, maxPrice, title, daysAgo, target: product?.seller ?? null });
   }
   const MSG = [
@@ -419,14 +484,17 @@ async function run(db) {
     ['compostnord', 'organic-waste', 'Biodéchets triés', 100, 'kg', 'Compost normé (sac de 25 kg)', 1, 'unit', '/demo/exchange/compost-sacks.jpg', 'Pour 100 kg de biodéchets apportés, nous vous remettons un sac de 25 kg de compost mûr.', 20000, 1],
     ['cartonnerie', 'paper-cardboard', 'Carton ondulé propre', 500, 'kg', 'Cartons d’emballage neufs', 100, 'unit', '/demo/exchange/cartons.jpg', 'Commerces : 500 kg de cartons usagés = 100 cartons neufs de déménagement.', 50000, 8],
     ['effilochage', 'textile', 'Chutes de coton', 50, 'kg', 'Plaids en coton recyclé', 1, 'unit', '/demo/exchange/plaids.jpg', 'Ateliers de confection : vos chutes de coton deviennent des plaids recyclés.', 5000, 3],
+    ['champignon', 'coffee-grounds', 'Marc de café', 20, 'kg', 'Barquette de pleurotes frais', 1, 'unit', null, 'Cafés : pour 20 kg de marc apporté, une barquette de 500 g de pleurotes cultivés sur votre marc !', 2000, 1],
+    ['elevage', 'bread-surplus', 'Pain sec', 50, 'kg', 'Litres de lait frais', 5, 'l', null, 'Boulangeries : échangez votre pain sec contre du lait frais de la ferme.', 3000, 2],
   ];
   for (const [who, slug, wanted, wq, wu, given, gq, gu, image, description, maxTotal, daysAgo] of exchangeSpecs) {
     const a = U[who];
     const { rows: [ex] } = await db.query(`
       INSERT INTO exchange_offers (author_id, wanted_category_id, wanted_label, wanted_quantity, wanted_unit, given_label, given_quantity,
-        given_unit, image_url, description, max_total_wanted, gouvernorat, lat, lng, expires_at, created_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING id
-    `, [a.id, cat[slug], wanted, wq, wu, given, gq, gu, image, description, maxTotal, a.gov, a.lat, a.lng, isoDay(ahead(60)), ago(daysAgo)]);
+        given_unit, image_url, description, max_total_wanted, gouvernorat, lat, lng, expires_at, created_at, i18n)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id
+    `, [a.id, cat[slug], wanted, wq, wu, given, gq, gu, image, description, maxTotal, a.gov, a.lat, a.lng, isoDay(ahead(60)), ago(daysAgo),
+      i18n({ wanted_label: wanted, given_label: given, description })]);
     X.push({ id: ex.id, who, slug });
     const responders = [...new Set(productsOf(slug).map((p) => p.seller))].slice(0, 2);
     for (const [i, rk] of responders.entries()) {
@@ -538,15 +606,19 @@ async function run(db) {
     ['biomasse', 'request.response', 'Huilerie Zitouna a répondu à votre demande', '« Noyaux d’olive séchés — 100 t » : proposition à 0,26 TND/kg.', data({ request_id: requestId('Noyaux d’olive séchés') }), true, 3],
     ['savonnerie', 'request.status', 'Demande ciblée transmise à Dar El Jeld', '200 L d’huile d’olive de friture demandés pour votre atelier de Nabeul. Réponse attendue sous 48 h.', data({ request_id: targeted?.id }), true, 0.6],
     ['compostnord', 'exchange.response', 'Nouvelle réponse à votre troc compost', 'Huilerie Sahel Bio propose 2 000 kg de grignons bio contre du compost normé.', data({ exchange_id: X[2]?.id }), true, 5],
+    // food service
+    ['ennour', 'request.new', 'Nouvelle demande d’achat : pain sec', 'Ferme Laitière Mornag recherche 3 000 kg de pain sec pour l’alimentation bovine.', data({ request_id: requestId('Pain sec pour alimentation bovine') }), false, 0.7],
+    ['cafe', 'exchange.new', 'Nouveau troc dans vos catégories', 'Champignonnière de Zaghouan échange des pleurotes frais contre votre marc de café.', data({ exchange_id: X[5]?.id }), false, 1.2],
   ];
   for (const [who, type, title, message, payload, isRead, hoursAgo] of notifs) {
     const at = new Date(Date.now() - hoursAgo * 3600000);
-    await db.query(`INSERT INTO notifications (user_id, type, title, message, data, is_read, read_at, created_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+    await db.query(`INSERT INTO notifications (user_id, type, title, message, data, is_read, read_at, created_at, i18n)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
       [U[who].id, type, title, message, JSON.stringify(payload), isRead,
-        isRead ? new Date(at.getTime() + 40 * 60000) : null, at]);
+        isRead ? new Date(at.getTime() + 40 * 60000) : null, at, i18n({ title, message })]);
   }
 
+  if (missingAr.size) console.warn(`⚠️  ${missingAr.size} text(s) without Arabic translation (seeds/ar.js):`, [...missingAr]);
   return {
     users: Object.keys(U).length + 1, products: P.length + 1, archivedProduct: 1, points: CP.length,
     purchases: purchaseRows.length, requests: R.length, notifications: notifs.length,
@@ -558,8 +630,8 @@ try {
   console.log('✅ Seed done:', stats);
   console.log(`
   Comptes (mot de passe ${PASSWORD}) :
-    Vendeur           huilerie.zitouna@clac.tn   (+ 12 autres vendeurs)
-    Acheteur          achats@biodiesel-sahel.tn  (+ 7 autres acheteurs)
+    Vendeur           huilerie.zitouna@clac.tn   (+ 24 autres : boulangerie, café, restaurants, conserverie…)
+    Acheteur          achats@biodiesel-sahel.tn  (+ 11 autres acheteurs)
     Point de collecte collecte.sfax@clac.tn      (+ 3 autres gérants)
     Admin             admin@clac.tn / Admin2026!`);
 } catch (error) {

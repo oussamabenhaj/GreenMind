@@ -9,7 +9,7 @@ const COLUMNS = ['category_id', 'market_id', 'title', 'description', 'unit', 'qu
 export const PRODUCT_FIELDS = `p.id, p.seller_id, p.category_id, p.market_id, p.title, p.description, p.unit,
   p.quantity_available, p.price_per_unit, p.min_order_quantity, p.quantity_discount_enabled, p.images, p.gouvernorat,
   p.address, p.lat, p.lng,
-  p.available_from, p.available_until, p.is_active, p.views_count, p.created_at, p.updated_at`;
+  p.available_from, p.available_until, p.is_active, p.views_count, p.created_at, p.updated_at, p.i18n`;
 
 export const productSelect = (distanceSql = 'NULL::numeric') => `
   SELECT ${PRODUCT_FIELDS},
@@ -69,7 +69,7 @@ export async function list(f, page, { ownerId = null } = {}) {
   if (f.q) {
     const like = qb.param(`%${f.q}%`);
     const raw = qb.param(f.q);
-    qb.where(`(p.title ILIKE ${like} OR p.description ILIKE ${like} OR c.name ILIKE ${like} OR similarity(p.title, ${raw}) > 0.25)`);
+    qb.where(`(p.title ILIKE ${like} OR p.description ILIKE ${like} OR c.name ILIKE ${like} OR p.i18n::text ILIKE ${like} OR c.i18n::text ILIKE ${like} OR similarity(p.title, ${raw}) > 0.25)`);
   }
   const distance = qb.near('p', f);
   const sort = SORTS[f.sort] ?? (f.q ? null : SORTS.recent);

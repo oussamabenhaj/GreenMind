@@ -13,9 +13,10 @@ import { useSpace } from 'src/hooks/use-space';
 
 import { fQty, fMoney, priceOf, quantityDiscountThreshold } from 'src/utils/clac';
 
+import { t } from 'src/locales/i18n';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
-
 // ----------------------------------------------------------------------
 
 const CATEGORY_VISUALS = {
@@ -82,7 +83,7 @@ export function ProductCard({ product, onEdit, onDelete, showSeller = false, del
       <Box sx={{ position: 'relative' }}>
         <ProductCover product={product} />
         <Stack direction="row" spacing={0.75} sx={{ position: 'absolute', top: 12, left: 12 }}>
-          {!product.is_active && <Label color="default" variant="filled">Masqué</Label>}
+          {!product.is_active && <Label color="default" variant="filled">{t('Masqué')}</Label>}
           {percent > 0 && (
             <Label color="error" variant="filled">
               -{percent}%
@@ -92,14 +93,14 @@ export function ProductCard({ product, onEdit, onDelete, showSeller = false, del
         {(onEdit || onDelete) && (
           <Stack direction="row" sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'rgba(255,255,255,0.9)', borderRadius: 1 }}>
             {onEdit && (
-              <Tooltip title="Modifier">
+              <Tooltip title={t('Modifier')}>
                 <IconButton size="small" onClick={() => onEdit(product)}>
                   <Iconify icon="solar:pen-bold" width={18} />
                 </IconButton>
               </Tooltip>
             )}
             {onDelete && (
-              <Tooltip title="Supprimer">
+              <Tooltip title={t('Supprimer')}>
                 <IconButton size="small" color="error" onClick={() => onDelete(product)}>
                   <Iconify icon="solar:trash-bin-trash-bold" width={18} />
                 </IconButton>
@@ -111,7 +112,7 @@ export function ProductCard({ product, onEdit, onDelete, showSeller = false, del
 
       <Stack spacing={1} sx={{ p: 2.5, flexGrow: 1 }}>
         <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700 }}>
-          {product.category_name ?? 'Matière'}
+          {product.category_name ?? t('Matière')}
           {product.market_name ? ` · ${product.market_name}` : ''}
         </Typography>
         <Typography
@@ -133,19 +134,19 @@ export function ProductCard({ product, onEdit, onDelete, showSeller = false, del
         <Stack direction="row" spacing={2} sx={{ color: 'text.secondary', typography: 'caption' }}>
           <Stack direction="row" alignItems="center" spacing={0.5}>
             <Iconify icon="solar:map-point-bold" width={16} />
-            <span>{product.gouvernorat ?? '—'}</span>
+            <span>{t(product.gouvernorat) ?? '—'}</span>
           </Stack>
           <Stack direction="row" alignItems="center" spacing={0.5}>
             <Iconify icon="solar:eye-bold" width={16} />
             <span>{product.views_count ?? 0}</span>
           </Stack>
-          {product.distance_km != null && <span>{product.distance_km} km</span>}
+          {product.distance_km != null && <span>{product.distance_km} {t('km')}</span>}
         </Stack>
 
         {discountThreshold != null && (
           <Stack direction="row" alignItems="center" spacing={0.5} sx={{ typography: 'caption', color: 'success.darker' }}>
             <Iconify icon="solar:tag-price-bold" width={14} />
-            <span>-10 % au-delà de {fQty(discountThreshold, product.unit)} · -15 % sur tout</span>
+            <span>{t('-10 % au-delà de')} {fQty(discountThreshold, product.unit)} {t('· -15 % sur tout')}</span>
           </Stack>
         )}
 
@@ -154,7 +155,7 @@ export function ProductCard({ product, onEdit, onDelete, showSeller = false, del
         <Stack direction="row" alignItems="flex-end" justifyContent="space-between" sx={{ pt: 1 }}>
           <Box>
             <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-              Disponible
+              {t('Disponible')}
             </Typography>
             <Typography variant="subtitle2">{fQty(product.quantity_available, product.unit)}</Typography>
           </Box>
@@ -165,11 +166,11 @@ export function ProductCard({ product, onEdit, onDelete, showSeller = false, del
               </Typography>
             )}
             <Typography variant="h6" sx={{ color: 'primary.dark' }}>
-              {base == null ? 'Sur devis' : fMoney(price)}
+              {base == null ? t('Sur devis') : fMoney(price)}
             </Typography>
             {bestPercent > percent && (
               <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                jusqu’à {fMoney(best)}
+                {t('jusqu’à')} {fMoney(best)}
               </Typography>
             )}
           </Box>
